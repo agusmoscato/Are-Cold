@@ -21,6 +21,7 @@ data/products.js          Los productos y las categorías (la única fuente de d
 data/products.json         Mismo contenido en JSON, solo como referencia para el día de conectar una API
 assets/logo-arecold.png     Logo del cliente
 assets/icons.svg              Set de íconos (referencia; en cada HTML están embebidos igual, ver abajo)
+assets/productos/                Fotos de stock genéricas por categoría (no son fotos reales, ver DECISIONES-DISENO.md)
 DECISIONES-DISENO.md            Resumen de decisiones de diseño + placeholders pendientes
 ```
 
@@ -71,8 +72,8 @@ El botón linkea a `https://www.google.com/maps/search/?api=1&query=Italia+727`.
 ### Cambiar redes sociales
 Instagram y Facebook están hardcodeados como links (`<a href="https://instagram.com/...">`) en el header no, pero sí en las secciones "Dónde estamos" / footer de cada página. El link de Facebook quedó genérico (`facebook.com`) porque no tenía la URL real — reemplazar en cada archivo donde aparece.
 
-### Reemplazar los placeholders de fotos por fotos reales
-Los placeholders se generan en `js/main.js`, función `photoBlockHTML()`. Hoy dibuja un bloque con patrón + ícono de categoría. Cuando haya fotos reales, lo más simple es agregar un campo `"image": "assets/productos/nombre.jpg"` a cada producto en `data/products.js`, y cambiar esa función para que, si existe `image`, muestre `<img src="...">` en vez del bloque con ícono. Avisame cuando tengan las fotos y lo hago.
+### Reemplazar las fotos de stock por fotos reales de cada producto
+Hoy `js/main.js` (`photoBlockHTML()`) muestra una foto de stock por categoría, tomada del mapa `CATEGORY_PHOTOS` (mismo archivo) y guardada en `assets/productos/<categoria>.jpg`. Son genéricas (banco Pexels), no el stock real, por eso llevan la etiqueta "Imagen ilustrativa". Cuando tengan fotos reales por producto, lo más simple es agregar un campo `"image": "assets/productos/nombre.jpg"` a cada producto en `data/products.js` y hacer que `photoBlockHTML()` priorice ese campo por sobre `CATEGORY_PHOTOS`. Avisame cuando tengan las fotos y lo hago.
 
 ### Textos generales (hero, "cómo comprar", "nosotros", etc.)
 Son texto plano dentro de cada HTML, no hay un archivo de contenido separado. Se edita directo en el `.html` correspondiente, buscando el texto por palabras clave.

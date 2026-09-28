@@ -43,7 +43,7 @@ La demo trae **19 productos de ejemplo** repartidos en las 14 categorías (el br
 
 ## 3. Lo que quedó como placeholder o supuesto
 
-- **Fotos de producto:** son bloques con ícono de la categoría y la etiqueta "Foto del producto", no imágenes reales (todavía no las tenemos). Estructuralmente están listos para reemplazar por fotos: cada tarjeta usa el mismo componente visual, así que cargar las fotos reales es un cambio centralizado.
+- **Fotos de producto:** son fotos de stock genéricas (banco de imágenes Pexels, libres de uso comercial), una por categoría, marcadas con la etiqueta "Imagen ilustrativa" — no son fotos reales del stock del cliente. Viven en `assets/productos/` y se asignan por categoría en `CATEGORY_PHOTOS` (`js/main.js`). Cuando haya fotos reales de cada producto, lo más directo es agregar un campo `"image"` por producto en `data/products.js` y priorizarlo sobre la foto de categoría en `photoBlockHTML()`. Las categorías sin match fotográfico razonable (no se dio el caso final, pero es el fallback) siguen mostrando el bloque con ícono + rayas.
 - **Logo del footer / redes:** el link de Facebook queda genérico (`facebook.com`) porque no se pasó la URL exacta de la página; hay que reemplazarlo por el link real.
 - **Mapa:** el bloque "Cómo llegar" linkea a Google Maps buscando "Italia 727" por texto. No se fijó una ciudad porque no se especificó; conviene confirmarla para que el mapa apunte exacto.
 - **Año del footer:** puesto en 2026 (fecha de esta demo). Ajustar si se publica más adelante.

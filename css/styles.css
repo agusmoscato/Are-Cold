@@ -42,8 +42,9 @@
   --font-display: 'Baloo 2', 'Segoe UI', sans-serif;
   --font-body: 'Plus Jakarta Sans', 'Segoe UI', sans-serif;
 
-  /* --- Radios (sistema único: cards y paneles 18px, botones full-pill) --- */
+  /* --- Radios (sistema único: cards 18px, paneles grandes 22px, botones full-pill) --- */
   --radius-card: 18px;
+  --radius-lg: 22px;
   --radius-sm: 10px;
   --radius-pill: 999px;
 
@@ -421,34 +422,42 @@ body.nav-locked{ overflow: hidden; }
 
 .hero__visual{
   position: relative;
-  border-radius: 22px;
+  border-radius: var(--radius-lg);
   overflow: hidden;
   aspect-ratio: 4/3.2;
   background:
     linear-gradient(145deg, var(--blue-500), var(--blue-700));
   box-shadow: var(--shadow-lg);
 }
+.hero__visual-img{
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.hero__visual::after{
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(0deg, rgba(14,36,54,.78) 0%, rgba(14,36,54,.15) 42%, rgba(14,36,54,0) 60%);
+}
 .hero__visual .frost-edge{
   position: absolute;
   left: 0; right: 0; top: 0;
+  width: 100%;
   height: 44px;
   color: var(--white);
+  z-index: 2;
 }
 .hero__visual-content{
   position: absolute;
-  inset: 0;
+  left: 0; right: 0; bottom: 0;
+  z-index: 2;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: .9rem;
-  padding: 2rem;
-  text-align: center;
-}
-.hero__visual-content .icon{
-  width: 64px;
-  height: 64px;
-  color: rgba(255,255,255,.85);
+  gap: .3rem;
+  padding: 1.6rem 1.8rem 3rem;
 }
 .hero__visual-content strong{
   font-family: var(--font-display);
@@ -457,12 +466,13 @@ body.nav-locked{ overflow: hidden; }
 }
 .hero__visual-content span{
   font-size: .92rem;
-  color: rgba(255,255,255,.7);
+  color: rgba(255,255,255,.75);
 }
 .photo-note{
   position: absolute;
   left: 1rem;
   bottom: 1rem;
+  z-index: 2;
   background: rgba(14,36,54,.55);
   color: rgba(255,255,255,.85);
   font-size: .74rem;
@@ -527,22 +537,30 @@ body.nav-locked{ overflow: hidden; }
 
 .badge{
   position: absolute;
-  top: .7rem;
-  left: .7rem;
+  top: .75rem;
+  left: .75rem;
   display: inline-flex;
   align-items: center;
   gap: .3rem;
-  padding: .32rem .7rem;
+  padding: .3rem .65rem;
   border-radius: var(--radius-pill);
-  font-size: .74rem;
-  font-weight: 700;
+  font-family: var(--font-body);
+  font-size: .72rem;
+  font-weight: 600;
   letter-spacing: .01em;
+  line-height: 1;
   z-index: 2;
+  box-shadow: var(--shadow-sm);
 }
-.badge .icon{ width: .95em; height: .95em; }
+.badge__icon{
+  width: 12px;
+  height: 12px;
+  flex-shrink: 0;
+  fill: none;
+}
 .badge--oferta{ background: var(--accent); color: var(--white); }
 .badge--destacado{ background: var(--ink); color: var(--white); }
-.badge--nuevo{ background: var(--blue-600); color: var(--white); }
+.badge--nuevo{ background: var(--white); color: var(--blue-700); border: 1.5px solid var(--blue-300); box-shadow: none; }
 
 /* =========================================================
    Placeholder de foto de producto
@@ -564,6 +582,13 @@ body.nav-locked{ overflow: hidden; }
   max-width: 72px;
   max-height: 72px;
   color: var(--blue-400);
+}
+.photo-block--photo img{
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 .photo-block__tag{
   position: absolute;
@@ -782,12 +807,20 @@ body.nav-locked{ overflow: hidden; }
 .spares{
   background: var(--ink);
   color: var(--text-on-dark);
-  border-radius: 26px;
+  border-radius: var(--radius-lg);
   padding: clamp(2rem, 5vw, 3.2rem);
   display: grid;
   gap: 2rem;
   position: relative;
   overflow: hidden;
+}
+.spares__frost{
+  position: absolute;
+  left: 0; right: 0; top: 0;
+  width: 100%;
+  height: 30px;
+  color: var(--white);
+  z-index: 1;
 }
 @media (min-width: 860px){
   .spares{ grid-template-columns: 1.1fr .9fr; align-items: center; }
@@ -1048,13 +1081,13 @@ body.nav-locked{ overflow: hidden; }
   max-width: 760px;
   max-height: 92vh;
   overflow-y: auto;
-  border-radius: 22px 22px 0 0;
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
   transform: translateY(24px);
   transition: transform .26s cubic-bezier(.16,1,.3,1);
   position: relative;
 }
 @media (min-width: 768px){
-  .product-modal{ border-radius: 22px; }
+  .product-modal{ border-radius: var(--radius-lg); }
 }
 .modal-overlay.is-open .product-modal{ transform: translateY(0); }
 

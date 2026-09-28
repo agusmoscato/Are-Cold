@@ -81,23 +81,3 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 });
-
-function productCardHTML(product) {
-  return `
-    <article class="product-card reveal is-visible">
-      <button type="button" class="product-card__open" data-product-id="${product.id}" aria-haspopup="dialog">
-        <div class="product-card__media">${photoBlockHTML(product.category, product.tag)}</div>
-        <div class="product-card__body">
-          <span class="product-card__cat">${categoryName(product.category)}</span>
-          <h3 class="product-card__name">${product.name}</h3>
-        </div>
-      </button>
-      <div class="product-card__body" style="padding-top:0">
-        <a class="btn btn--whatsapp btn--sm btn--block" href="${waLinkForProduct(product.name)}" target="_blank" rel="noopener">
-          <svg class="icon" aria-hidden="true"><use href="#icon-whatsapp"></use></svg>
-          Consultar
-        </a>
-      </div>
-    </article>
-  `;
-}

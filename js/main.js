@@ -162,6 +162,25 @@ function categoryIcon(slug) {
   return AECOLD_DATA.categories.find((c) => c.slug === slug)?.icon || "tag";
 }
 
+/* Fotos de stock genéricas por categoría (no son fotos reales del producto/stock del cliente,
+   ver DECISIONES-DISENO.md). Si una categoría no tiene foto acá, se usa el bloque con ícono. */
+const CATEGORY_PHOTOS = {
+  "heladeras": "assets/productos/heladeras.jpg",
+  "freezer": "assets/productos/freezer.jpg",
+  "lavarropas": "assets/productos/lavarropas.jpg",
+  "secadoras": "assets/productos/secadoras.jpg",
+  "lavavajillas": "assets/productos/lavavajillas.jpg",
+  "coccion": "assets/productos/coccion.jpg",
+  "campanas": "assets/productos/campanas.jpg",
+  "aires-acondicionados": "assets/productos/aires-acondicionados.jpg",
+  "calefaccion": "assets/productos/calefaccion.jpg",
+  "termotanques": "assets/productos/termotanques.jpg",
+  "smart-tv": "assets/productos/smart-tv.jpg",
+  "colchones": "assets/productos/colchones.jpg",
+  "pequenos-electrodomesticos": "assets/productos/pequenos-electrodomesticos.jpg",
+  "repuestos": "assets/productos/repuestos.jpg"
+};
+
 function tagLabel(tag) {
   if (tag === "oferta") return "Oferta";
   if (tag === "destacado") return "Destacado";
@@ -172,17 +191,47 @@ function tagLabel(tag) {
 function tagBadgeHTML(tag) {
   if (!tag) return "";
   const label = tagLabel(tag);
-  const icon = tag === "oferta" ? "tag" : "check";
-  return `<span class="badge badge--${tag}"><svg class="icon" aria-hidden="true"><use href="#icon-${icon}"></use></svg>${label}</span>`;
+  const icon = tag === "oferta" ? "tag" : tag === "destacado" ? "star" : "check";
+  return `<span class="badge badge--${tag}"><svg class="badge__icon" aria-hidden="true"><use href="#icon-${icon}"></use></svg>${label}</span>`;
 }
 
 function photoBlockHTML(categorySlug, tag) {
+  const photo = CATEGORY_PHOTOS[categorySlug];
+  if (photo) {
+    return `
+      <div class="photo-block photo-block--photo">
+        ${tagBadgeHTML(tag)}
+        <img src="${photo}" alt="" loading="lazy">
+        <span class="photo-block__tag">Imagen ilustrativa</span>
+      </div>
+    `;
+  }
   return `
     <div class="photo-block">
       ${tagBadgeHTML(tag)}
       <svg class="icon" aria-hidden="true"><use href="#icon-${categoryIcon(categorySlug)}"></use></svg>
       <span class="photo-block__tag">Foto del producto</span>
     </div>
+  `;
+}
+
+function productCardHTML(product) {
+  return `
+    <article class="product-card reveal is-visible">
+      <button type="button" class="product-card__open" data-product-id="${product.id}" aria-haspopup="dialog">
+        <div class="product-card__media">${photoBlockHTML(product.category, product.tag)}</div>
+        <div class="product-card__body">
+          <span class="product-card__cat">${categoryName(product.category)}</span>
+          <h3 class="product-card__name">${product.name}</h3>
+        </div>
+      </button>
+      <div class="product-card__body" style="padding-top:0">
+        <a class="btn btn--whatsapp btn--sm btn--block" href="${waLinkForProduct(product.name)}" target="_blank" rel="noopener">
+          <svg class="icon" aria-hidden="true"><use href="#icon-whatsapp"></use></svg>
+          Consultar
+        </a>
+      </div>
+    </article>
   `;
 }
 
