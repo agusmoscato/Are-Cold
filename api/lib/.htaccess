@@ -1,0 +1,7 @@
+# Código interno de la API: nunca se accede desde el navegador
+<IfModule mod_authz_core.c>
+  Require all denied
+</IfModule>
+<IfModule !mod_authz_core.c>
+  Deny from all
+</IfModule>

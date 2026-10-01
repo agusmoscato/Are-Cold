@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Panel | Refrigeración Are-Cold</title>
+<link rel="icon" href="../assets/logo-arecold.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="admin.css">
+</head>
+<body>
+
+<!-- Ingreso -->
+<div class="boot" id="boot-view">Cargando…</div>
+
+<div class="login" id="login-view" hidden>
+  <form class="login__card" id="login-form" novalidate>
+    <img class="login__logo" src="../assets/logo-arecold.png" alt="Refrigeración Are-Cold">
+    <h1>Panel de administración</h1>
+    <p class="login__lead">Ingresá para editar el catálogo y los datos del sitio.</p>
+    <label class="field">
+      <span class="field__label">Usuario</span>
+      <input type="text" id="login-user" autocomplete="username" required>
+    </label>
+    <label class="field">
+      <span class="field__label">Contraseña</span>
+      <input type="password" id="login-pass" autocomplete="current-password" required>
+    </label>
+    <p class="form-error" id="login-error" role="alert" hidden></p>
+    <button type="submit" class="btn btn--primary btn--block" id="login-submit">Ingresar</button>
+  </form>
+</div>
+
+<!-- Panel -->
+<div class="app" id="app" hidden>
+  <aside class="sidebar">
+    <div class="sidebar__brand">
+      <img src="../assets/logo-arecold.png" alt="">
+      <span>Panel</span>
+    </div>
+    <nav class="sidebar__nav" aria-label="Secciones del panel">
+      <a href="#productos" data-section="productos">
+        <svg class="icon" aria-hidden="true"><use href="#icon-box"></use></svg>
+        Productos <span class="sidebar__count" id="nav-count"></span>
+      </a>
+      <a href="#categorias" data-section="categorias">
+        <svg class="icon" aria-hidden="true"><use href="#icon-folders"></use></svg>
+        Categorías
+      </a>
+      <a href="#negocio" data-section="negocio">
+        <svg class="icon" aria-hidden="true"><use href="#icon-store"></use></svg>
+        Datos del negocio
+      </a>
+      <a href="#respaldo" data-section="respaldo">
+        <svg class="icon" aria-hidden="true"><use href="#icon-download"></use></svg>
+        Respaldo
+      </a>
+    </nav>
+    <div class="sidebar__foot">
+      <a href="../index.html" target="_blank" rel="noopener">
+        <svg class="icon" aria-hidden="true"><use href="#icon-eye"></use></svg>
+        Ver el sitio
+      </a>
+      <button type="button" id="logout">
+        <svg class="icon" aria-hidden="true"><use href="#icon-logout"></use></svg>
+        Cerrar sesión
+      </button>
+    </div>
+  </aside>
+
+  <main class="main" id="view" tabindex="-1"></main>
+</div>
+
+<dialog class="dialog" id="confirm-dialog">
+  <form method="dialog">
+    <h2 id="confirm-title"></h2>
+    <p id="confirm-text"></p>
+    <div class="dialog__actions">
+      <button type="submit" value="cancel" class="btn btn--ghost">Cancelar</button>
+      <button type="submit" value="ok" class="btn btn--danger" id="confirm-ok">Confirmar</button>
+    </div>
+  </form>
+</dialog>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+  // Los datos se piden al servidor después de ingresar (ver admin.js)
+  window.AECOLD_SERVER = { settings: {}, categories: [], products: [] };
+  window.AECOLD_ASSET_BASE = "../";
+</script>
+<script src="../js/icons.js"></script>
+<script src="../js/store.js"></script>
+<script src="admin.js"></script>
+</body>
+</html>

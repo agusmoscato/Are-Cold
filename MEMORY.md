@@ -1,89 +1,89 @@
-# Are-Cold — guía rápida para modificar la demo
+# Are-Cold — guía rápida para modificar el sitio
 
-Esto es un mapa "quiero cambiar X → tengo que tocar Y". Pensado para que vos (o yo en otra sesión) puedan seguir editando sin tener que releer todo el proyecto.
+Mapa "quiero cambiar X → tengo que tocar Y", para seguir editando sin releer todo el proyecto.
 
-No hay build ni servidor: se edita el archivo y se refresca el navegador.
+**Versión final:** sitio + panel con backend real (PHP + MySQL en Hostinger). Para publicarlo, ver `PUBLICAR-EN-HOSTINGER.md`. En local: `php -S 127.0.0.1:8090 -t .`. Abierto con doble clic, el sitio se ve con los datos de ejemplo (ver "Fallback sin base").
 
 ---
 
-## Estructura del proyecto
+## Estructura
 
 ```
-index.html          Inicio
-catalogo.html        Catálogo (filtros + buscador)
-nosotros.html         Nosotros / Local
-contacto.html         Contacto
-css/styles.css        TODO el diseño (colores, tipografías, layout)
-js/main.js             Header, menú, buscador, WhatsApp, modal de producto
-js/home.js              Renderiza ofertas / categorías / destacados en Inicio
-js/catalog.js            Renderiza y filtra la grilla del Catálogo
-data/products.js          Los productos y las categorías (la única fuente de datos)
-data/products.json         Mismo contenido en JSON, solo como referencia para el día de conectar una API
-assets/logo-arecold.png     Logo del cliente
-assets/icons.svg              Set de íconos (referencia; en cada HTML están embebidos igual, ver abajo)
-assets/productos/                Fotos de stock genéricas por categoría (no son fotos reales, ver DECISIONES-DISENO.md)
-DECISIONES-DISENO.md            Resumen de decisiones de diseño + placeholders pendientes
+index.html, catalogo.html,      Páginas públicas
+nosotros.html, contacto.html
+admin/                          Panel (index.html + admin.css + admin.js), habla con api/
+api/
+  data.php                      Datos públicos. ?format=js → define window.AECOLD_SERVER (lo cargan las páginas)
+  auth.php                      Ingreso, salida y cambio de contraseña del panel
+  admin.php                     Acciones del panel (guardar productos, categorías, datos, subir fotos, respaldo)
+  install.php                   Instalación única; después solo restablece la contraseña. Borrar del servidor tras usarlo
+  config.sample.php             Plantilla → copiar como config.php (NO va a Git)
+  lib/bootstrap.php             Conexión, sesión, CSRF, respuestas JSON
+  lib/repo.php                  Lectura/escritura del catálogo con todas las validaciones
+  lib/schema.sql                Tablas
+uploads/                        Fotos subidas desde el panel (NO van a Git; .htaccess impide ejecutar scripts)
+data/datos-de-ejemplo.js        DATOS DE EJEMPLO (única copia): fallback sin base, install.php y sql/generar.php
+sql/arecold-base-inicial.sql    Estructura + datos de ejemplo + admin de prueba, para importar en phpMyAdmin
+sql/generar.php                 Regenera el .sql (php sql/generar.php). La carpeta sql/ no se sirve por web
+css/styles.css                  Diseño del sitio. Al final: bloques "FASE 2" y "VERSIÓN FINAL"
+js/icons.js                     Íconos (se inyectan en cada página y en el panel)
+js/store.js                     Lee window.AECOLD_SERVER + helpers + lista "Mi cotización"
+js/layout.js                    Header con mega-menú, menú móvil, footer, panel de cotización, modal
+js/main.js                      Menús, galería, botones "Agregar a cotización"
+js/home.js                      Hero (foto del local + categorías destacadas), grilla de categorías, marcas
+js/catalog.js                   Catálogo: barra lateral / panel de filtros, búsqueda, grilla
+assets/fachada-placeholder.jpg  Foto de REFERENCIA del hero (no es el local; CC BY 2.0, Tjeerd)
+assets/productos/               Fotos de stock por categoría para los productos de ejemplo
 ```
 
-⚠️ **Los íconos SVG están duplicados dentro de cada HTML** (dentro de `<svg class="icon-sprite">` al principio del `<body>`), no se cargan desde `assets/icons.svg`. Es así a propósito: si se cargaran desde un archivo aparte, no funcionarían al abrir el sitio con doble clic (los navegadores bloquean eso por seguridad). Si agregás un ícono nuevo, hay que pegarlo en el `<svg class="icon-sprite">` de **cada** página que lo use.
+Orden de scripts en cada página: `api/data.php?format=js` → (si no hay datos) `data/datos-de-ejemplo.js` → `js/icons.js` → `js/store.js` → `js/layout.js` → `js/main.js` → script de la página.
+
+---
+
+## Cómo viajan los datos
+
+- **Sitio público:** `api/data.php?format=js` devuelve los productos visibles, categorías y datos del negocio como un script. Tiene caché de 60 segundos: un cambio del panel puede tardar hasta un minuto en verse.
+- **Panel:** ingresa con `api/auth.php` (sesión PHP, cookie httponly). Lee todo con `admin.php?action=data` y guarda acción por acción. Cada POST lleva el encabezado `X-CSRF-Token`.
+- **Fotos:** el navegador las achica (máx. 1600 px, JPG) y las sube con `action=upload`. El servidor valida que sean imágenes reales y, si tiene GD, las vuelve a generar. Se guardan en `uploads/<products|categories|site>/AAAA/MM/`. Cuando se quita o se reemplaza una foto, el archivo se borra si nadie más lo usa. Las de `assets/` nunca se borran.
+- **Categorías:** el panel manda la lista completa en orden y el servidor la reconcilia. No deja borrar una categoría con productos, y al borrar una subcategoría sus productos quedan sin subcategoría.
+- **Fallback sin base (solo sitio público):** si falta `api/config.php`, la base no conecta o no tiene tablas, `api/data.php` sirve `data/datos-de-ejemplo.js` con `demo: true`. Si el sitio se abre sin PHP, cada página carga ese archivo sola (script en línea después de `api/data.php`). En ambos casos `js/layout.js` muestra arriba "Vista con datos de ejemplo" y la consola explica el motivo. **El panel nunca usa ese fallback:** `auth.php` revisa la base (`db_problem()`) y el panel muestra el error en pantalla.
+- **Usuario de prueba del .sql:** `admin` / `arecold-cambiar-2026`. Si se ingresa con esa contraseña, el panel muestra un aviso hasta que se cambie (`SQL_DEFAULT_PASSWORD` en `api/auth.php`, igual que en `sql/generar.php`).
+- Lo único que se guarda en el navegador es la lista "Mi cotización" de cada visitante (`localStorage`, `arecold:quote`).
+
+Seguridad incluida: contraseñas con `password_hash`, bloqueo de 15 min tras 8 intentos fallidos por IP, CSRF, cierre de sesión por inactividad (8 h, configurable), validación de rutas de fotos (solo `assets/` o `uploads/`), mapa limitado a `google.com/maps/embed`, `.htaccess` que bloquean `api/lib/`, `config.php`, los `.md` y la ejecución de scripts en `uploads/`.
+
+---
+
+## Esquema (tablas)
+
+`admins`, `login_attempts`, `settings` (clave → valor JSON), `categories` (slug único, posición, highlight), `subcategories` (por categoría), `products` (id texto, FK a categoría/subcategoría, `active`, `features` JSON), `product_images` (ruta + posición).
+
+Lo que devuelve la API (y usa el front) tiene la misma forma que `data/datos-de-ejemplo.js`:
+- `settings`: whatsapp, whatsappDisplay, address, city, hours, hoursShort, instagram, facebook, mapEmbed, heroEyebrow, heroTitle, heroHighlight, heroText, heroImage, brands
+- `categories[]`: slug, name, icon, image, highlight, subcategories[{slug, name}]
+- `products[]`: id, name, category, subcategory, tag, active, description, features[], images[]
+
+Para sumar un dato del negocio nuevo: agregarlo a `SETTINGS_KEYS` y a `save_settings()` en `api/lib/repo.php`, al formulario en `renderSettings()` de `admin/admin.js` y, si va en la semilla, a `data/datos-de-ejemplo.js` (después correr `php sql/generar.php`).
 
 ---
 
 ## Cambios más comunes
 
-### Agregar / editar / borrar un producto
-Editá **`data/products.js`** (es el único lugar; no toques `products.json`, es solo referencia). Cada producto es un objeto:
+| Quiero… | Dónde |
+|---|---|
+| Productos, fotos, dar de baja | Panel → Productos |
+| Categorías, subcategorías, cuáles van destacadas en el hero | Panel → Categorías |
+| WhatsApp, dirección, horarios, mapa, redes, textos del hero, marcas, **foto del local** | Panel → Datos del negocio |
+| Contraseña del panel | Panel → Datos del negocio → Tu cuenta (si se perdió: ver `PUBLICAR-EN-HOSTINGER.md`) |
+| Mensaje de "Pedir cotización por WhatsApp" | `quoteMessage()` en `js/store.js` |
+| Colores / tipografías del sitio | `:root` de `css/styles.css` (+ `<link>` de Google Fonts en cada HTML) |
+| Qué categorías ocupan dos columnas en la grilla del inicio | `wide` en `renderCategoryShowcase()` (`js/home.js`) |
+| Agregar un ícono | `<symbol id="icon-…">` en `js/icons.js`; para categorías, también en `CATEGORY_ICONS` (`admin/admin.js`) |
+| Tamaño máximo de fotos / tiempo de sesión | `api/config.php` |
 
-```js
-{
-  "id": "p20",                          // único, no repetir
-  "name": "Nombre del producto",
-  "category": "heladeras",              // debe ser un slug que exista en categories
-  "tag": "oferta",                      // "oferta" | "destacado" | "nuevo" | "" (vacío = sin etiqueta)
-  "description": "Texto de la ficha ampliada.",
-  "features": ["Característica 1", "Característica 2"]
-}
-```
-Se guarda, se refresca el navegador y ya aparece en Inicio (si tiene tag) y en el Catálogo.
-
-### Agregar / renombrar una categoría
-También en `data/products.js`, arriba de todo, en `categories`. Cada categoría necesita un ícono (`icon`) que exista como `<symbol id="icon-...">` en el sprite. Si es una categoría nueva sin ícono creado, hay que dibujar uno nuevo en el sprite (mismo estilo: `stroke="currentColor" stroke-width="1.75"`, sin relleno) y pegarlo en el `<svg class="icon-sprite">` de `index.html` y `catalogo.html`.
-
-### Cambiar colores (paleta)
-Todo en **`css/styles.css`**, arriba de todo, dentro de `:root { ... }`. Los nombres son claros: `--blue-600` / `--blue-500` son el azul del logo, `--accent` es el naranja de ofertas y CTAs, `--ink` es el azul oscuro del header/footer. Cambiás el valor hexadecimal y se actualiza en todo el sitio (son variables CSS, no hay que buscar y reemplazar en cada componente).
-
-### Cambiar tipografías
-Dos lugares:
-1. El `<link>` de Google Fonts en el `<head>` de cada HTML (buscá `fonts.googleapis.com`).
-2. Las variables `--font-display` y `--font-body` en `css/styles.css` (arriba de todo).
-Hay que cambiar los dos consistentemente.
-
-### Cambiar el número de WhatsApp
-Un solo lugar: `js/main.js`, primera línea, `const WHATSAPP_NUMBER = "5492326422390";`. Se usa en todos los botones de WhatsApp del sitio (no hay que tocar los HTML).
-
-### Cambiar dirección / horarios
-Están escritos directo en cada HTML (no hay un solo archivo central para esto, es texto de contenido). Se repite en: `index.html` (sección "Dónde estamos" + footer), `contacto.html`, `nosotros.html`, y el footer de `catalogo.html`. Buscá "Italia 727" o "Lunes a viernes" en cada archivo.
-
-También está en el `<script type="application/ld+json">` de `index.html` (datos estructurados para SEO / Google) — si cambia la dirección u horario, actualizar ahí también.
-
-### Cambiar el mapa / "Cómo llegar"
-El botón linkea a `https://www.google.com/maps/search/?api=1&query=Italia+727`. Si confirman la ciudad, conviene agregarla a la query, ej: `query=Italia+727,+Chivilcoy`. Está en `index.html` y `contacto.html`.
-
-### Cambiar redes sociales
-Instagram y Facebook están hardcodeados como links (`<a href="https://instagram.com/...">`) en el header no, pero sí en las secciones "Dónde estamos" / footer de cada página. El link de Facebook quedó genérico (`facebook.com`) porque no tenía la URL real — reemplazar en cada archivo donde aparece.
-
-### Reemplazar las fotos de stock por fotos reales de cada producto
-Hoy `js/main.js` (`photoBlockHTML()`) muestra una foto de stock por categoría, tomada del mapa `CATEGORY_PHOTOS` (mismo archivo) y guardada en `assets/productos/<categoria>.jpg`. Son genéricas (banco Pexels), no el stock real, por eso llevan la etiqueta "Imagen ilustrativa". Cuando tengan fotos reales por producto, lo más simple es agregar un campo `"image": "assets/productos/nombre.jpg"` a cada producto en `data/products.js` y hacer que `photoBlockHTML()` priorice ese campo por sobre `CATEGORY_PHOTOS`. Avisame cuando tengan las fotos y lo hago.
-
-### Textos generales (hero, "cómo comprar", "nosotros", etc.)
-Son texto plano dentro de cada HTML, no hay un archivo de contenido separado. Se edita directo en el `.html` correspondiente, buscando el texto por palabras clave.
+Los datos del negocio aparecen en el HTML mediante atributos: `data-setting="address"`, `data-setting-lines="hours"`, `data-href="instagram|facebook|maps"`, `data-map-embed` (iframe). Los textos de Nosotros, Contacto y el bloque Repuestos siguen escritos en cada HTML.
 
 ---
 
-## Cosas a confirmar con el cliente antes de la versión final
-(ver también `DECISIONES-DISENO.md`)
-- URL real de Facebook
-- Ciudad para que el mapa apunte exacto (asumí que la dirección alcanza, no puse ciudad)
-- Fotos reales de productos y del local
-- Confirmar si quieren cambiar el naranja de acento o el tono de los textos
-- Cargar el catálogo completo (~200 productos) en `data/products.js` cuando lo tengan armado
+## Pendiente con el cliente
+Ver `DECISIONES-DISENO.md`, sección "Pendientes".

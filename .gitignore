@@ -1,0 +1,6 @@
+# Contraseñas del servidor
+api/config.php
+
+# Fotos subidas desde el panel (viven en el servidor, no en Git)
+uploads/*
+!uploads/.htaccess

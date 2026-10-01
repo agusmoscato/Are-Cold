@@ -1,62 +1,113 @@
-/* Refrigeración Are-Cold — Inicio: ofertas, categorías y destacados */
+/* Refrigeración Are-Cold — Inicio: hero, categorías y marcas */
 
 document.addEventListener("DOMContentLoaded", () => {
-  renderOffers();
-  renderCategories();
-  renderFeatured();
+  renderHeroCopy();
+  renderHeroFocus();
+  renderCategoryShowcase();
+  renderBrands();
 });
 
-function renderOffers() {
-  const track = document.querySelector("#offers-track");
-  if (!track) return;
-  const offers = AECOLD_DATA.products.filter((p) => p.tag === "oferta" || p.tag === "destacado");
-  track.innerHTML = offers.map(offerCardHTML).join("");
+/* Foto del local de fondo. Mientras sea la foto de referencia se muestra su crédito (licencia CC BY) */
+const HERO_PLACEHOLDER = "assets/fachada-placeholder.jpg";
+
+function renderHeroBackground() {
+  const img = document.querySelector("#hero-bg");
+  const credit = document.querySelector("#hero-credit");
+  if (!img) return;
+  const src = settings().heroImage || HERO_PLACEHOLDER;
+  img.src = assetURL(src);
+  if (credit) credit.hidden = src !== HERO_PLACEHOLDER;
 }
 
-function offerCardHTML(product) {
-  return `
-    <article class="offer-card">
-      <button type="button" class="product-card__open" data-product-id="${product.id}" aria-haspopup="dialog" style="display:block;width:100%;text-align:left">
-        <div class="offer-card__media">${photoBlockHTML(product.category, product.tag)}</div>
-        <div class="offer-card__body">
-          <h3>${product.name}</h3>
-          <span class="cat">${categoryName(product.category)}</span>
-          <span class="btn btn--whatsapp btn--sm btn--block">
-            <svg class="icon" aria-hidden="true"><use href="#icon-whatsapp"></use></svg>
-            Consultar
-          </span>
-        </div>
-      </button>
-    </article>
-  `;
+/* Textos del hero: editables desde el panel (Datos del negocio → Textos del inicio) */
+function renderHeroCopy() {
+  const s = settings();
+  const title = document.querySelector("#hero-title");
+  if (title && s.heroTitle) {
+    title.innerHTML = `${escapeHTML(s.heroTitle)}${s.heroHighlight ? ` <em>${escapeHTML(s.heroHighlight)}</em>` : ""}`;
+  }
+  const eyebrow = document.querySelector("#hero-eyebrow");
+  if (eyebrow && s.heroEyebrow) eyebrow.textContent = s.heroEyebrow;
+  const text = document.querySelector("#hero-text");
+  if (text && s.heroText) text.textContent = s.heroText;
 }
 
-/* Mosaico asimétrico: Heladeras y Repuestos con tile grande,
-   el resto en tamaño estándar, sin repetir la misma estructura en cada celda */
-function renderCategories() {
-  const mosaic = document.querySelector("#category-mosaic");
-  if (!mosaic) return;
+/* Las dos categorías marcadas como "destacadas" (hoy Calefacción y Aires).
+   Calefacción va en tono cálido; el resto en frío, con el borde de hielo del logo. */
+function renderHeroFocus() {
+  const holder = document.querySelector("#hero-focus");
+  if (!holder) return;
+  const focus = AECOLD_DATA.categories.filter((c) => c.highlight).slice(0, 2);
+  if (!focus.length) {
+    holder.remove();
+    return;
+  }
 
-  const bigSlugs = new Set(["heladeras", "repuestos"]);
-
-  mosaic.innerHTML = AECOLD_DATA.categories
-    .map((cat) => {
-      const isBig = bigSlugs.has(cat.slug);
-      const variantClass = cat.slug === "repuestos" ? " cat-tile--accent" : isBig ? " cat-tile--big" : "";
+  holder.innerHTML = focus
+    .map((c) => {
+      const warm = c.slug === "calefaccion";
+      const n = countIn(c.slug);
+      const subs = c.subcategories
+        .map((sub) => `<a href="catalogo.html?cat=${c.slug}&sub=${sub.slug}">${escapeHTML(sub.name)}</a>`)
+        .join("");
       return `
-        <a class="cat-tile${variantClass}" href="catalogo.html?cat=${cat.slug}">
-          <svg class="icon" aria-hidden="true"><use href="#icon-${cat.icon}"></use></svg>
-          <span>${cat.name}</span>
-        </a>
-      `;
+      <article class="focus-card focus-card--${warm ? "warm" : "cold"}">
+        ${c.image ? `<img class="focus-card__img" src="${assetURL(c.image)}" alt="">` : ""}
+        ${warm ? "" : '<svg class="frost-edge" viewBox="0 0 400 34" preserveAspectRatio="none" aria-hidden="true"><use href="#icon-frost-strip"></use></svg>'}
+        <div class="focus-card__body">
+          <span class="focus-card__icon">${iconHTML(warm ? "flame" : c.icon)}</span>
+          <h2><a class="focus-card__link" href="catalogo.html?cat=${c.slug}">${escapeHTML(c.name)}</a></h2>
+          <p class="focus-card__meta">${n} ${n === 1 ? "equipo" : "equipos"} en catálogo</p>
+          ${subs ? `<div class="focus-card__subs">${subs}</div>` : ""}
+          <span class="focus-card__cta" aria-hidden="true">Ver equipos ${iconHTML("arrow-right")}</span>
+        </div>
+      </article>`;
+    })
+    .join("");
+  holder.classList.toggle("hero-focus--single", focus.length === 1);
+}
+
+/* Grilla grande de categorías con foto. Heladeras y Repuestos ocupan dos columnas */
+function renderCategoryShowcase() {
+  const grid = document.querySelector("#category-showcase");
+  if (!grid) return;
+  const wide = new Set(["heladeras", "repuestos"]);
+
+  grid.innerHTML = AECOLD_DATA.categories
+    .map((c) => {
+      const n = countIn(c.slug);
+      const subs = c.subcategories.slice(0, 3).map((s) => escapeHTML(s.name)).join(" · ");
+      const classes = ["cat-card"];
+      if (wide.has(c.slug)) classes.push("cat-card--wide");
+      if (!c.image) classes.push("cat-card--plain");
+      return `
+      <a class="${classes.join(" ")}" href="catalogo.html?cat=${c.slug}">
+        ${c.image ? `<img src="${assetURL(c.image)}" alt="" loading="lazy">` : ""}
+        <span class="cat-card__icon">${iconHTML(c.icon)}</span>
+        <span class="cat-card__text">
+          <strong>${escapeHTML(c.name)}</strong>
+          <small>${subs || `${n} ${n === 1 ? "producto" : "productos"}`}</small>
+        </span>
+        <span class="cat-card__arrow">${iconHTML("arrow-right")}</span>
+      </a>`;
     })
     .join("");
 }
 
-function renderFeatured() {
-  const grid = document.querySelector("#featured-grid");
-  if (!grid) return;
-  const featured = AECOLD_DATA.products.filter((p) => p.tag === "destacado" || p.tag === "oferta").slice(0, 8);
-  const list = featured.length ? featured : AECOLD_DATA.products.slice(0, 8);
-  grid.innerHTML = list.map(productCardHTML).join("");
+/* Tira de marcas: la lista se duplica para que la animación sea continua */
+function renderBrands() {
+  const track = document.querySelector("#brands-track");
+  if (!track) return;
+  const brands = settings().brands || [];
+  if (!brands.length) {
+    track.closest("section")?.remove();
+    return;
+  }
+  const item = (b, hidden) => `<li class="brand-chip"${hidden ? ' aria-hidden="true"' : ""}>${escapeHTML(b)}</li>`;
+  track.innerHTML = brands.map((b) => item(b)).join("") + brands.map((b) => item(b, true)).join("");
+  track.style.setProperty("--brands-duration", `${Math.max(brands.length * 3.5, 18)}s`);
 }
+
+// La foto de fondo se asigna apenas carga el script (los scripts van al final del <body>),
+// sin esperar a DOMContentLoaded. Va al final porque usa HERO_PLACEHOLDER, definida arriba.
+renderHeroBackground();
