@@ -32,7 +32,7 @@ js/layout.js                    Header con mega-menú, menú móvil, footer, pan
 js/main.js                      Menús, galería, botones "Agregar a cotización"
 js/home.js                      Hero (foto del local + categorías destacadas), grilla de categorías, marcas
 js/catalog.js                   Catálogo: barra lateral / panel de filtros, búsqueda, grilla
-assets/fachada-placeholder.jpg  Foto de REFERENCIA del hero (no es el local; CC BY 2.0, Tjeerd)
+assets/fachada-local.jpg        Foto real de la fachada (fondo del hero por defecto; se cambia desde el panel)
 assets/productos/               Fotos de stock por categoría para los productos de ejemplo
 ```
 

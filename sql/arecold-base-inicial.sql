@@ -94,7 +94,7 @@ CREATE TABLE IF NOT EXISTS product_images (
 -- ---------------------------------------------------------------------
 -- Usuario administrador de prueba
 -- ---------------------------------------------------------------------
-INSERT IGNORE INTO admins (username, password_hash) VALUES ('admin', '$2y$10$7GU1byivjWt.SdSEU8ShYOIoo63bObLHMNRqm3qtGaKi9NXTlfbg6');
+INSERT IGNORE INTO admins (username, password_hash) VALUES ('admin', '$2y$10$ge06Y7MAceVahqz81/GhGe4TD.9Cpxqk3u3oiOZ8Jn3abf1voSxI.');
 
 -- ---------------------------------------------------------------------
 -- Datos del negocio
@@ -113,7 +113,7 @@ INSERT IGNORE INTO settings (name, value) VALUES
   ('heroTitle', '"El clima de tu casa, resuelto"'),
   ('heroHighlight', '"todo el año"'),
   ('heroText', '"Calefacción para el invierno, aires para el verano y todo lo demás para el hogar. Armá tu selección en el catálogo y te pasamos la cotización por WhatsApp."'),
-  ('heroImage', '"assets/fachada-placeholder.jpg"'),
+  ('heroImage', '"assets/fachada-local.jpg"'),
   ('brands', '["Marca 1","Marca 2","Marca 3","Marca 4","Marca 5","Marca 6","Marca 7","Marca 8"]');
 
 -- ---------------------------------------------------------------------

@@ -45,7 +45,7 @@ Los **27 productos de ejemplo** (opcionales al instalar) cubren las 14 categorí
 
 - **Fotos de producto:** los productos de ejemplo usan fotos de stock genéricas (banco Pexels, libres de uso comercial), una por categoría, marcadas "Imagen ilustrativa" — no son fotos reales del stock del cliente. Las fotos reales se suben desde el panel (varias por producto); esas no llevan la etiqueta. Un producto sin fotos muestra el bloque con ícono.
 - **Año del footer:** se calcula solo con el año actual.
-- **Dominio:** el sitio no referencia ningún dominio propio todavía, ya que `refrigeracionarecold` aún no está registrado.
+- **Dominio:** publicado en `arecold.moscode.com.ar`; el sitio no tiene rutas absolutas, así que funciona igual si se pasa a un dominio propio.
 - **Formulario de contacto:** arma un link de WhatsApp con los datos cargados (no envía mail ni guarda en ninguna base). Es el comportamiento esperado para esta etapa, según el brief.
 - **Cantidad de productos:** 27 de muestra sobre los ~200 reales que tendrá el catálogo final.
 
@@ -83,7 +83,7 @@ Los **27 productos de ejemplo** (opcionales al instalar) cubren las 14 categorí
 - **Fotos en el servidor:** se achican en el navegador antes de subir (rápido desde el celular), el servidor verifica que sean imágenes reales y las guarda en `uploads/`. Al quitar una foto, el archivo se borra.
 - **Instalación guiada** (`api/install.php`): crea las tablas, el usuario y carga los datos iniciales. Pide una clave definida en `config.php`, así nadie puede instalar antes que el dueño.
 
-**Hero con la foto del local.** El fondo del inicio es ahora una fachada con un velo azul oscuro que mantiene el contraste del texto. Mientras no esté la foto real se usa una **foto de referencia**: una esquina comercial de San Antonio de Areco (autor Tjeerd, licencia CC BY 2.0, por eso aparece su crédito en un costado). **No es el local de Are-Cold.** La foto real se sube desde el panel → Datos del negocio → *Foto del local*; al cambiarla, el crédito desaparece solo.
+**Hero con la foto del local.** El fondo del inicio es la foto real de la fachada (el portón de Italia 727 con el cartel de Are-Cold), con un velo azul oscuro y un desenfoque leve para que el cartel no compita con el texto. Se puede cambiar desde el panel → Datos del negocio → *Foto del local*.
 
 **Marcas debajo del hero.** Orden del inicio: Hero → Marcas → Elegí por dónde empezar → Repuestos → Cómo pedir tu cotización → Dónde estamos.
 
@@ -105,7 +105,6 @@ Los **27 productos de ejemplo** (opcionales al instalar) cubren las 14 categorí
 ## 6. Pendientes con el cliente
 
 - **Instagram y Facebook:** confirmar con Antonella el usuario correcto de Instagram y la página correcta de Facebook. Los cargados (`instagram.com/refigeracion.arecold`, `facebook.com/RefrigeracionArecold`) no están verificados, y el de Instagram dice "refigeracion", sin la primera r. Se cambian desde el panel → Datos del negocio.
-- **Foto real del local** (fachada, horizontal) para reemplazar la de referencia del hero.
 - **Marcas reales:** la tira usa "Marca 1… Marca 8". Falta la lista real y, si se quieren como imagen, los logos.
 - **Catálogo real:** hoy existe solo como PDF por WhatsApp. Se carga producto por producto desde el panel una vez publicado.
 

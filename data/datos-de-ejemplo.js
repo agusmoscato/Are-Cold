@@ -29,7 +29,7 @@ window.AECOLD_DEMO = {
     "heroTitle": "El clima de tu casa, resuelto",
     "heroHighlight": "todo el año",
     "heroText": "Calefacción para el invierno, aires para el verano y todo lo demás para el hogar. Armá tu selección en el catálogo y te pasamos la cotización por WhatsApp.",
-    "heroImage": "assets/fachada-placeholder.jpg",
+    "heroImage": "assets/fachada-local.jpg",
     "brands": [
       "Marca 1",
       "Marca 2",

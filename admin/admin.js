@@ -13,7 +13,8 @@ const CATEGORY_ICONS = [
   ["box", "Caja"], ["tag", "Etiqueta"], ["star", "Estrella"], ["truck", "Camión"]
 ];
 const TAGS = [["", "Sin etiqueta"], ["oferta", "Oferta"], ["destacado", "Destacado"], ["nuevo", "Nuevo"]];
-const HERO_PLACEHOLDER = "assets/fachada-placeholder.jpg";
+const HERO_DEFAULT = "assets/fachada-local.jpg"; // foto original de la fachada
+const HERO_LEGACY = "assets/fachada-placeholder.jpg"; // nombre anterior: se trata como la foto original
 
 const db = AECOLD_DATA;
 const $ = (sel, root = document) => root.querySelector(sel);
@@ -1094,7 +1095,7 @@ function uniqueSlug(name, taken) {
    ========================================================= */
 function renderSettings(view) {
   const s = db.settings;
-  let heroImage = s.heroImage || HERO_PLACEHOLDER;
+  let heroImage = !s.heroImage || s.heroImage === HERO_LEGACY ? HERO_DEFAULT : s.heroImage;
 
   const field = (id, label, value, opts = {}) => `
     <label class="field" id="field-${id}">
@@ -1165,7 +1166,7 @@ function renderSettings(view) {
                 <label class="btn btn--ghost">${icon("upload")} Subir foto del local
                   <input type="file" accept="image/*" id="hero-file" class="visually-hidden">
                 </label>
-                <button type="button" class="btn btn--ghost" id="hero-reset">Volver a la foto de referencia</button>
+                <button type="button" class="btn btn--ghost" id="hero-reset">Volver a la foto original</button>
               </div>
             </div>
           </div>
@@ -1223,11 +1224,11 @@ function renderSettings(view) {
 
   const syncHero = () => {
     $("#hero-preview").src = assetURL(heroImage);
-    const isPlaceholder = heroImage === HERO_PLACEHOLDER;
-    $("#hero-note").textContent = isPlaceholder
-      ? "Ahora se muestra una foto de referencia (no es el local). Reemplazala por una foto real de la fachada."
+    const isDefault = heroImage === HERO_DEFAULT;
+    $("#hero-note").textContent = isDefault
+      ? "Se muestra la foto original de la fachada. Podés subir otra cuando quieras."
       : "Esta es la foto del local que se ve en el sitio.";
-    $("#hero-reset").hidden = isPlaceholder;
+    $("#hero-reset").hidden = isDefault;
   };
   syncHero();
 
@@ -1246,7 +1247,7 @@ function renderSettings(view) {
     }
   });
   $("#hero-reset").addEventListener("click", () => {
-    heroImage = HERO_PLACEHOLDER;
+    heroImage = HERO_DEFAULT;
     formDirty = true;
     syncHero();
   });

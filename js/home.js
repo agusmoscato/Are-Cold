@@ -7,16 +7,16 @@ document.addEventListener("DOMContentLoaded", () => {
   renderBrands();
 });
 
-/* Foto del local de fondo. Mientras sea la foto de referencia se muestra su crédito (licencia CC BY) */
-const HERO_PLACEHOLDER = "assets/fachada-placeholder.jpg";
+/* Foto del local de fondo: la cargada en el panel, o la fachada original (assets/fachada-local.jpg).
+   "fachada-placeholder.jpg" era el nombre de la foto de referencia anterior: si la base todavía lo
+   tiene guardado, se muestra la foto real. */
+const HERO_DEFAULT = "assets/fachada-local.jpg";
 
 function renderHeroBackground() {
   const img = document.querySelector("#hero-bg");
-  const credit = document.querySelector("#hero-credit");
   if (!img) return;
-  const src = settings().heroImage || HERO_PLACEHOLDER;
-  img.src = assetURL(src);
-  if (credit) credit.hidden = src !== HERO_PLACEHOLDER;
+  const saved = settings().heroImage;
+  img.src = assetURL(!saved || saved === "assets/fachada-placeholder.jpg" ? HERO_DEFAULT : saved);
 }
 
 /* Textos del hero: editables desde el panel (Datos del negocio → Textos del inicio) */
@@ -109,5 +109,5 @@ function renderBrands() {
 }
 
 // La foto de fondo se asigna apenas carga el script (los scripts van al final del <body>),
-// sin esperar a DOMContentLoaded. Va al final porque usa HERO_PLACEHOLDER, definida arriba.
+// sin esperar a DOMContentLoaded. Va al final porque usa HERO_DEFAULT, definida arriba.
 renderHeroBackground();
