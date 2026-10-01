@@ -36,6 +36,8 @@ assets/fachada-placeholder.jpg  Foto de REFERENCIA del hero (no es el local; CC 
 assets/productos/               Fotos de stock por categoría para los productos de ejemplo
 ```
 
+**Caché (importante al publicar cambios):** el CDN de Hostinger guarda CSS y JS por 7 días. Por eso todas las rutas llevan `?v=AAAAMMDDNN` (en los 4 HTML y en `admin/index.html`). **Cada vez que cambies un `.css` o un `.js`, subí ese número en todos esos archivos** (buscar y reemplazar `?v=`); si no, quien ya entró al sitio va a seguir viendo la versión vieja. Los `.html` se revalidan siempre (regla en `.htaccess`).
+
 Orden de scripts en cada página: `api/data.php?format=js` → (si no hay datos) `data/datos-de-ejemplo.js` → `js/icons.js` → `js/store.js` → `js/layout.js` → `js/main.js` → script de la página.
 
 ---

@@ -17,3 +17,10 @@ RedirectMatch 404 /\.git
   Header always set Referrer-Policy "strict-origin-when-cross-origin"
   Header always set X-Frame-Options "SAMEORIGIN"
 </IfModule>
+
+# Las páginas se revalidan siempre: así apuntan a la versión nueva del CSS/JS (?v=...)
+<FilesMatch "\.html?$">
+  <IfModule mod_headers.c>
+    Header set Cache-Control "no-cache"
+  </IfModule>
+</FilesMatch>
