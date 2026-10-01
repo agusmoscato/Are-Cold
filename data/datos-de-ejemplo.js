@@ -18,6 +18,7 @@ window.AECOLD_DEMO = {
   "settings": {
     "whatsapp": "5492326422390",
     "whatsappDisplay": "2326-422390",
+    "email": "",
     "address": "Italia 727",
     "city": "San Antonio de Areco",
     "hours": "Lunes a viernes de 8 a 12 hs y de 15 a 18 hs.\nSábados y domingos, cerrado.",
@@ -30,16 +31,7 @@ window.AECOLD_DEMO = {
     "heroHighlight": "todo el año",
     "heroText": "Calefacción para el invierno, aires para el verano y todo lo demás para el hogar. Armá tu selección en el catálogo y te pasamos la cotización por WhatsApp.",
     "heroImage": "assets/fachada-local.jpg",
-    "brands": [
-      "Marca 1",
-      "Marca 2",
-      "Marca 3",
-      "Marca 4",
-      "Marca 5",
-      "Marca 6",
-      "Marca 7",
-      "Marca 8"
-    ]
+    "brands": []
   },
   "categories": [
     {

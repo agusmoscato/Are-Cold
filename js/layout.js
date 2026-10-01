@@ -54,8 +54,8 @@
   const header = demoNotice + `
   <header class="site-header">
     <div class="container site-header__bar">
-      <a href="index.html" class="site-header__logo" aria-label="Refrigeración Are-Cold, ir al inicio">
-        <img src="assets/logo-arecold.png" alt="Refrigeración Are-Cold">
+      <a href="index.html" class="site-header__logo" aria-label="Are-Cold, ir al inicio">
+        <img src="assets/logo-arecold.png?v=2" alt="Are-Cold">
       </a>
 
       <nav class="site-header__nav" aria-label="Navegación principal">
@@ -126,7 +126,7 @@
   const mobileNav = `
   <div class="mobile-nav" aria-hidden="true">
     <div class="mobile-nav__top">
-      <img src="assets/logo-arecold.png" alt="Refrigeración Are-Cold">
+      <img src="assets/logo-arecold.png?v=2" alt="Are-Cold">
       <button type="button" class="icon-btn mobile-nav__close" aria-label="Cerrar menú">${icon("close")}</button>
     </div>
     <nav class="mobile-nav__links" aria-label="Navegación móvil">
@@ -155,7 +155,7 @@
   <footer class="site-footer">
     <div class="container site-footer__top">
       <div class="site-footer__brand">
-        <img src="assets/logo-arecold.png" alt="Refrigeración Are-Cold">
+        <img src="assets/logo-arecold.png?v=2" alt="Are-Cold">
         <p>Electrodomésticos, climatización y repuestos. Armá tu selección en el catálogo y pedí la cotización por WhatsApp.</p>
         <div class="site-footer__social">
           <a href="#" data-href="instagram" target="_blank" rel="noopener" aria-label="Instagram">${icon("instagram")}</a>
@@ -183,12 +183,13 @@
         <div class="site-footer__list">
           <span data-setting="address"></span>
           <span data-setting="whatsappDisplay"></span>
+          <a data-mail href="#"></a>
           <span data-setting="hoursShort"></span>
         </div>
       </div>
     </div>
     <div class="container site-footer__bottom">
-      <span>© ${new Date().getFullYear()} Refrigeración Are-Cold</span>
+      <span>© ${new Date().getFullYear()} Are-Cold</span>
       <span>Sitio desarrollado por <a href="https://moscode.com.ar" target="_blank" rel="noopener">Moscode</a></span>
     </div>
   </footer>
@@ -254,6 +255,14 @@ function bindSettings(root = document) {
   root.querySelectorAll("[data-map-embed]").forEach((frame) => {
     if (s.mapEmbed) frame.src = s.mapEmbed;
     else frame.closest(".location__map")?.classList.add("location__map--empty");
+  });
+  root.querySelectorAll("[data-mail]").forEach((el) => {
+    if (s.email) {
+      el.textContent = s.email;
+      el.setAttribute("href", `mailto:${s.email}`);
+    } else {
+      (el.closest("[data-hide-empty]") || el).hidden = true;
+    }
   });
   root.querySelectorAll("[data-href]").forEach((el) => {
     const key = el.dataset.href;

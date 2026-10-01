@@ -72,6 +72,7 @@ CREATE TABLE IF NOT EXISTS products (
   subcategory_id INT UNSIGNED NULL,
   name           VARCHAR(160) NOT NULL,
   tag            VARCHAR(20)  NOT NULL DEFAULT '',
+  price          VARCHAR(12)  NOT NULL DEFAULT '',
   active         TINYINT(1)   NOT NULL DEFAULT 1,
   description    TEXT         NOT NULL,
   features       TEXT         NOT NULL,
@@ -114,7 +115,7 @@ INSERT IGNORE INTO settings (name, value) VALUES
   ('heroHighlight', '"todo el año"'),
   ('heroText', '"Calefacción para el invierno, aires para el verano y todo lo demás para el hogar. Armá tu selección en el catálogo y te pasamos la cotización por WhatsApp."'),
   ('heroImage', '"assets/fachada-local.jpg"'),
-  ('brands', '["Marca 1","Marca 2","Marca 3","Marca 4","Marca 5","Marca 6","Marca 7","Marca 8"]');
+  ('brands', '[]');
 
 -- ---------------------------------------------------------------------
 -- Categorías y subcategorías (ids fijos para que los productos las referencien)

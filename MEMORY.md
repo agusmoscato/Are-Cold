@@ -58,12 +58,12 @@ Seguridad incluida: contraseñas con `password_hash`, bloqueo de 15 min tras 8 i
 
 ## Esquema (tablas)
 
-`admins`, `login_attempts`, `settings` (clave → valor JSON), `categories` (slug único, posición, highlight), `subcategories` (por categoría), `products` (id texto, FK a categoría/subcategoría, `active`, `features` JSON), `product_images` (ruta + posición).
+`admins`, `login_attempts`, `settings` (clave → valor JSON), `categories` (slug único, posición, highlight), `subcategories` (por categoría), `products` (id texto, FK a categoría/subcategoría, `price` VARCHAR(12), `active`, `features` JSON), `product_images` (ruta + posición).
 
 Lo que devuelve la API (y usa el front) tiene la misma forma que `data/datos-de-ejemplo.js`:
-- `settings`: whatsapp, whatsappDisplay, address, city, hours, hoursShort, instagram, facebook, mapEmbed, heroEyebrow, heroTitle, heroHighlight, heroText, heroImage, brands
+- `settings`: whatsapp, whatsappDisplay, email, address, city, hours, hoursShort, instagram, facebook, mapEmbed, heroEyebrow, heroTitle, heroHighlight, heroText, heroImage, brands (lista de {name, logo})
 - `categories[]`: slug, name, icon, image, highlight, subcategories[{slug, name}]
-- `products[]`: id, name, category, subcategory, tag, active, description, features[], images[]
+- `products[]`: id, name, category, subcategory, tag, price (solo dígitos, "" = consultar), active, description, features[], images[]
 
 Para sumar un dato del negocio nuevo: agregarlo a `SETTINGS_KEYS` y a `save_settings()` en `api/lib/repo.php`, al formulario en `renderSettings()` de `admin/admin.js` y, si va en la semilla, a `data/datos-de-ejemplo.js` (después correr `php sql/generar.php`).
 

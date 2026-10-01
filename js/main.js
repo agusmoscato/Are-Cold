@@ -25,9 +25,11 @@ function wireWhatsappLinks(root = document) {
 }
 
 function markCurrentNav() {
-  const path = location.pathname.split("/").pop() || "index.html";
+  // Con URLs limpias la ruta es "/catalogo" o "/inicio"; abierto como archivo, "catalogo.html"
+  let path = (location.pathname.split("/").pop() || "index.html").replace(/\.html$/, "");
+  if (path === "inicio") path = "index";
   document.querySelectorAll("[data-nav-link]").forEach((link) => {
-    if (link.getAttribute("href") === path) link.setAttribute("aria-current", "page");
+    if (link.getAttribute("href").replace(/\.html$/, "") === path) link.setAttribute("aria-current", "page");
   });
 }
 
@@ -224,6 +226,15 @@ function quoteButtonHTML(product, extraClass = "") {
     </button>`;
 }
 
+/* Precio en pesos argentinos; sin precio cargado, se invita a consultar */
+function priceHTML(product, extraClass = "") {
+  const n = Number(product.price);
+  const text = n > 0 ? "$ " + n.toLocaleString("es-AR") : "";
+  return text
+    ? `<p class="price ${extraClass}">${text}</p>`
+    : `<p class="price price--ask ${extraClass}">Consultar precio</p>`;
+}
+
 function productCardHTML(product) {
   return `
     <article class="product-card">
@@ -232,6 +243,7 @@ function productCardHTML(product) {
         <div class="product-card__body">
           <span class="product-card__cat">${productCategoryLabel(product)}</span>
           <h3 class="product-card__name">${escapeHTML(product.name)}</h3>
+          ${priceHTML(product)}
         </div>
       </button>
       <div class="product-card__foot">
@@ -379,6 +391,7 @@ function renderModalContent(product) {
     <div class="product-modal__body">
       <span class="product-modal__cat">${productCategoryLabel(product)}</span>
       <h2 id="product-modal-title">${escapeHTML(product.name)}</h2>
+      ${priceHTML(product, "price--lg")}
       ${product.description ? `<p class="product-modal__desc">${escapeHTML(product.description)}</p>` : ""}
       ${featuresHTML ? `<ul class="product-modal__features">${featuresHTML}</ul>` : ""}
       <div class="product-modal__actions">
@@ -530,3 +543,13 @@ function showToast(message, withLink = false) {
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => toast.classList.remove("is-visible"), 3200);
 }
+
+/* Medición de consultas: si el sitio tiene Google Analytics (gtag) o Plausible, cada clic a WhatsApp queda registrado */
+document.addEventListener("click", (e) => {
+  const link = e.target.closest('a[href*="wa.me"], a[href*="api.whatsapp.com"], a[data-wa], a[data-quote-send]');
+  if (!link) return;
+  try {
+    if (typeof window.gtag === "function") window.gtag("event", "whatsapp_click", { link_text: (link.textContent || "").trim().slice(0, 60) });
+    if (typeof window.plausible === "function") window.plausible("WhatsApp");
+  } catch (err) { /* la medición nunca debe romper el sitio */ }
+});

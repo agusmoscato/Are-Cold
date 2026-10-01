@@ -45,7 +45,7 @@ Los **27 productos de ejemplo** (opcionales al instalar) cubren las 14 categorí
 
 - **Fotos de producto:** los productos de ejemplo usan fotos de stock genéricas (banco Pexels, libres de uso comercial), una por categoría, marcadas "Imagen ilustrativa" — no son fotos reales del stock del cliente. Las fotos reales se suben desde el panel (varias por producto); esas no llevan la etiqueta. Un producto sin fotos muestra el bloque con ícono.
 - **Año del footer:** se calcula solo con el año actual.
-- **Dominio:** publicado en `arecold.moscode.com.ar`; el sitio no tiene rutas absolutas, así que funciona igual si se pasa a un dominio propio.
+- **Dominio:** publicado en `arecold.com.ar` (antes de prueba en `arecold.moscode.com.ar`); el sitio no tiene rutas absolutas, así que funciona igual si se pasa a un dominio propio.
 - **Formulario de contacto:** arma un link de WhatsApp con los datos cargados (no envía mail ni guarda en ninguna base). Es el comportamiento esperado para esta etapa, según el brief.
 - **Cantidad de productos:** 27 de muestra sobre los ~200 reales que tendrá el catálogo final.
 

@@ -66,7 +66,7 @@ async function uploadImage(blob, folder) {
   const form = new FormData();
   form.append("action", "upload");
   form.append("folder", folder);
-  form.append("image", blob, "foto.jpg");
+  form.append("image", blob, blob.type === "image/png" ? "foto.png" : "foto.jpg");
   const res = await request(`${API}admin.php`, { method: "POST", headers: { "X-CSRF-Token": csrf || "" }, body: form });
   return res.path;
 }
@@ -463,7 +463,7 @@ function renderProductForm(view, id) {
   // Trabajamos sobre una copia: nada se guarda hasta tocar "Guardar"
   const draft = existing
     ? JSON.parse(JSON.stringify(existing))
-    : { id: "", name: "", category: listFilters.cat || "", subcategory: "", tag: "", active: true, description: "", features: [], images: [] };
+    : { id: "", name: "", category: listFilters.cat || "", subcategory: "", tag: "", price: "", active: true, description: "", features: [], images: [] };
   if (!draft.features.length) draft.features.push("");
   formDirty = false;
 
@@ -531,6 +531,11 @@ function renderProductForm(view, id) {
                   <input type="checkbox" id="p-active"${draft.active !== false ? " checked" : ""}>
                   <span class="switch__track"></span>
                   <span>Visible en el sitio</span>
+                </label>
+                <label class="field">
+                  <span class="field__label">Precio (opcional)</span>
+                  <input type="text" id="p-price" inputmode="numeric" placeholder="Ej: 450000" value="${esc(draft.price || "")}" maxlength="14" autocomplete="off">
+                  <span class="field__hint">Solo números, en pesos. Si lo dejás vacío, el sitio muestra “Consultar precio”.</span>
                 </label>
                 <label class="field">
                   <span class="field__label">Etiqueta</span>
@@ -800,6 +805,7 @@ function renderProductForm(view, id) {
       category,
       subcategory: $("#p-sub").value,
       tag: $("#p-tag").value,
+      price: $("#p-price").value.replace(/[^0-9]/g, ""),
       active: $("#p-active").checked,
       description: $("#p-desc").value.trim(),
       features: draft.features.map((f) => f.trim()).filter(Boolean),
@@ -826,7 +832,8 @@ function swap(arr, a, b) {
 }
 
 /* Achica la foto en el navegador antes de subirla (máx. 1600 px, JPG): sube más rápido desde el celular */
-function resizeImage(file, maxSize = 1600, quality = 0.85) {
+/* keepAlpha: para logos, conserva la transparencia (sale PNG en vez de JPG) */
+function resizeImage(file, maxSize = 1600, quality = 0.85, keepAlpha = false) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onerror = reject;
@@ -839,10 +846,12 @@ function resizeImage(file, maxSize = 1600, quality = 0.85) {
         canvas.width = Math.round(img.width * scale);
         canvas.height = Math.round(img.height * scale);
         const ctx = canvas.getContext("2d");
-        ctx.fillStyle = "#ffffff"; // fondo blanco para PNG con transparencia
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        if (!keepAlpha) {
+          ctx.fillStyle = "#ffffff"; // fondo blanco para PNG con transparencia
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error("No se pudo procesar la foto."))), "image/jpeg", quality);
+        canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error("No se pudo procesar la foto."))), keepAlpha ? "image/png" : "image/jpeg", quality);
       };
       img.src = reader.result;
     };
@@ -854,8 +863,14 @@ function resizeImage(file, maxSize = 1600, quality = 0.85) {
    Categorías y subcategorías (los cambios se guardan al momento)
    ========================================================= */
 function renderCategories(view) {
-  const iconOptions = (selected) =>
-    CATEGORY_ICONS.map(([id, label]) => `<option value="${id}"${id === selected ? " selected" : ""}>${label}</option>`).join("");
+  /* Grilla de íconos: se elige por cómo se ve; el nombre queda como tooltip */
+  const iconPicker = (selected, attr, label) => `
+    <div class="icon-picker" role="radiogroup" aria-label="${esc(label)}" ${attr}>
+      ${CATEGORY_ICONS.map(
+        ([id, name]) => `<button type="button" class="icon-picker__btn${id === selected ? " is-selected" : ""}" role="radio" aria-checked="${id === selected}" aria-label="${name}" title="${name}" data-icon="${id}">${icon(id)}</button>`
+      ).join("")}
+    </div>`;
+  let newIcon = "box";
 
   view.innerHTML = `
     <div class="page">
@@ -875,7 +890,7 @@ function renderCategories(view) {
           </label>
           <label class="field field--icon">
             <span class="field__label">Ícono</span>
-            <select id="cat-new-icon">${iconOptions("box")}</select>
+            ${iconPicker(newIcon, 'id="cat-new-icon"', "Ícono de la nueva categoría")}
           </label>
           <button type="submit" class="btn btn--primary">${icon("plus")} Agregar categoría</button>
         </form>
@@ -919,8 +934,8 @@ function renderCategories(view) {
                 </label>
               </div>
               <label class="field">
-                <span class="visually-hidden">Ícono</span>
-                <select class="input" data-cat-icon aria-label="Ícono de ${esc(c.name)}">${iconOptions(c.icon)}</select>
+                <span class="field__label">Ícono</span>
+                ${iconPicker(c.icon, "data-cat-icon", "Ícono de " + c.name)}
               </label>
             </div>
             <div>
@@ -981,8 +996,31 @@ function renderCategories(view) {
       return;
     }
     const slug = uniqueSlug(name, db.categories.map((c) => c.slug));
-    db.categories.push({ slug, name, icon: $("#cat-new-icon").value, image: "", highlight: false, subcategories: [] });
+    db.categories.push({ slug, name, icon: newIcon, image: "", highlight: false, subcategories: [] });
     if (await saveCats(`Categoría “${name}” agregada al final de la lista`)) $("#cat-new-name").value = "";
+  });
+
+  const pickIcon = (btn) => {
+    btn.closest(".icon-picker").querySelectorAll(".icon-picker__btn").forEach((b) => {
+      const on = b === btn;
+      b.classList.toggle("is-selected", on);
+      b.setAttribute("aria-checked", on);
+    });
+  };
+  $("#cat-new-icon").addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-icon]");
+    if (!btn) return;
+    newIcon = btn.dataset.icon;
+    pickIcon(btn);
+  });
+  list.addEventListener("click", (e) => {
+    const btn = e.target.closest(".icon-picker [data-icon]");
+    if (!btn) return;
+    const cat = catFrom(btn);
+    if (cat.icon === btn.dataset.icon) return;
+    cat.icon = btn.dataset.icon;
+    pickIcon(btn);
+    saveCats("Ícono guardado");
   });
 
   list.addEventListener("change", async (e) => {
@@ -996,9 +1034,6 @@ function renderCategories(view) {
       }
       cat.name = name;
       saveCats("Nombre guardado", false);
-    } else if (t.matches("[data-cat-icon]")) {
-      cat.icon = t.value;
-      saveCats("Ícono guardado");
     } else if (t.matches("[data-cat-highlight]")) {
       const highlighted = db.categories.filter((c) => c.highlight && c !== cat).length;
       if (t.checked && highlighted >= 2) {
@@ -1095,6 +1130,8 @@ function uniqueSlug(name, taken) {
    ========================================================= */
 function renderSettings(view) {
   const s = db.settings;
+  // Las marcas viejas (solo texto, sin logo) se descartan: el sitio solo muestra logos reales
+  let brands = (s.brands || []).filter((b) => b && typeof b === "object").map((b) => ({ name: b.name || "", logo: b.logo || "" }));
   let heroImage = !s.heroImage || s.heroImage === HERO_LEGACY ? HERO_DEFAULT : s.heroImage;
 
   const field = (id, label, value, opts = {}) => `
@@ -1129,12 +1166,13 @@ function renderSettings(view) {
       </div>
       <form class="settings" id="settings-form" novalidate>
         <section class="card">
-          <div class="card__head"><h2>WhatsApp</h2></div>
+          <div class="card__head"><div><h2>Contacto</h2><p>Se muestra en “Dónde estamos”, en “Otros datos” de Contacto y en el pie de página.</p></div></div>
           <div class="card__body">
             <div class="row-2">
               ${field("whatsapp", "Número para los botones", s.whatsapp, { placeholder: "5492326422390", hint: "Con 549 + característica + número, sin espacios ni guiones." })}
               ${field("whatsappDisplay", "Número como se muestra", s.whatsappDisplay, { placeholder: "2326-422390", hint: "Así lo lee la gente en el sitio." })}
             </div>
+            ${field("email", "Mail de contacto", s.email, { placeholder: "ventas@arecold.com.ar", hint: "Opcional. Si queda vacío, no se muestra en el sitio." })}
           </div>
         </section>
 
@@ -1193,9 +1231,15 @@ function renderSettings(view) {
         </section>
 
         <section class="card">
-          <div class="card__head"><div><h2>Marcas</h2><p>La tira de marcas del inicio.</p></div></div>
+          <div class="card__head"><div><h2>Marcas</h2><p>Los logos de la tira del inicio. Si no cargás ninguna, la tira no se muestra.</p></div></div>
           <div class="card__body">
-            ${field("brands", "Marcas que se muestran", (s.brands || []).join("\n"), { textarea: true, rows: 6, hint: "Una por renglón. Si queda vacío, la tira no se muestra." })}
+            <div class="brand-list" id="brand-list"></div>
+            <div class="brand-add">
+              <label class="btn btn--ghost">${icon("upload")} Agregar logo
+                <input type="file" accept="image/*" id="brand-add-file" class="visually-hidden" multiple>
+              </label>
+              <span class="field__hint">Fondo transparente o blanco, de cualquier proporción: el sitio los muestra del mismo tamaño.</span>
+            </div>
           </div>
         </section>
 
@@ -1252,6 +1296,78 @@ function renderSettings(view) {
     syncHero();
   });
 
+  const brandList = $("#brand-list");
+  const renderBrands = () => {
+    brandList.innerHTML = brands.length
+      ? brands
+          .map(
+            (b, i) => `
+        <div class="brand-row" data-brand="${i}">
+          <span class="brand-row__logo"><img src="${esc(assetURL(b.logo))}" alt=""></span>
+          <input class="input" type="text" value="${esc(b.name)}" data-brand-name placeholder="Nombre de la marca" aria-label="Nombre de la marca (texto alternativo del logo)" maxlength="60">
+          <label class="btn btn--ghost btn--sm">${icon("upload")} Cambiar
+            <input type="file" accept="image/*" data-brand-file class="visually-hidden">
+          </label>
+          <button type="button" class="icon-btn" data-brand-move="-1" aria-label="Subir"${i === 0 ? " disabled" : ""}>${icon("arrow-up")}</button>
+          <button type="button" class="icon-btn" data-brand-move="1" aria-label="Bajar"${i === brands.length - 1 ? " disabled" : ""}>${icon("arrow-down")}</button>
+          <button type="button" class="icon-btn icon-btn--danger" data-brand-remove aria-label="Quitar marca" title="Quitar">${icon("trash")}</button>
+        </div>`
+          )
+          .join("")
+      : '<p class="field__hint">Todavía no hay marcas: la tira no se muestra en el sitio.</p>';
+  };
+  renderBrands();
+
+  const uploadLogo = async (file) => uploadImage(await resizeImage(file, 600, 0.9, true), "brands");
+  const nameFromFile = (f) => f.name.replace(/\.[^.]+$/, "").replace(/[-_]+/g, " ").trim().slice(0, 60);
+  $("#brand-add-file").addEventListener("change", async (e) => {
+    const files = [...e.target.files];
+    e.target.value = "";
+    if (!files.length) return;
+    toast(files.length > 1 ? "Subiendo logos…" : "Subiendo logo…");
+    for (const file of files) {
+      try {
+        brands.push({ name: nameFromFile(file), logo: await uploadLogo(file) });
+        formDirty = true;
+      } catch (err) {
+        handleError(err.message ? err : new Error("No se pudo leer esa imagen. Probá con un JPG o PNG."));
+      }
+    }
+    renderBrands();
+    toast("Listo. Revisá los nombres y tocá “Guardar datos” para publicar.");
+  });
+  brandList.addEventListener("input", (e) => {
+    if (e.target.matches("[data-brand-name]")) brands[+e.target.closest("[data-brand]").dataset.brand].name = e.target.value;
+  });
+  brandList.addEventListener("change", async (e) => {
+    if (!e.target.matches("[data-brand-file]") || !e.target.files[0]) return;
+    const row = e.target.closest("[data-brand]");
+    const file = e.target.files[0];
+    e.target.value = "";
+    toast("Subiendo logo…");
+    try {
+      brands[+row.dataset.brand].logo = await uploadLogo(file);
+      formDirty = true;
+      renderBrands();
+      toast("Logo subido. Tocá “Guardar datos” para publicarlo.");
+    } catch (err) {
+      handleError(err.message ? err : new Error("No se pudo leer esa imagen. Probá con un JPG o PNG."));
+    }
+  });
+  brandList.addEventListener("click", (e) => {
+    const btn = e.target.closest("button");
+    if (!btn) return;
+    const i = +btn.closest("[data-brand]").dataset.brand;
+    if (btn.matches("[data-brand-remove]")) brands.splice(i, 1);
+    else if (btn.matches("[data-brand-move]")) {
+      const j = i + +btn.dataset.brandMove;
+      if (j < 0 || j >= brands.length) return;
+      [brands[i], brands[j]] = [brands[j], brands[i]];
+    } else return;
+    formDirty = true;
+    renderBrands();
+  });
+
   form.addEventListener("click", (e) => {
     const test = e.target.closest("[data-test-link]");
     if (!test) return;
@@ -1282,6 +1398,7 @@ function renderSettings(view) {
     const next = {
       whatsapp,
       whatsappDisplay: val("whatsappDisplay"),
+      email: val("email"),
       address: val("address"),
       city: val("city"),
       hours: $("#s-hours").value,
@@ -1294,14 +1411,14 @@ function renderSettings(view) {
       heroHighlight: val("heroHighlight"),
       heroText: val("heroText"),
       heroImage,
-      brands: $("#s-brands").value.split("\n").map((l) => l.trim()).filter(Boolean)
+      brands: brands.map((b) => ({ name: b.name.trim(), logo: b.logo }))
     };
 
     try {
       const res = await busy($("#settings-save"), () => api("saveSettings", { settings: next }));
       db.settings = res.settings;
       formDirty = false;
-      ["whatsapp", "instagram", "facebook", "mapEmbed"].forEach((k) => ($(`#s-${k}`).value = res.settings[k] || ""));
+      ["whatsapp", "email", "instagram", "facebook", "mapEmbed"].forEach((k) => ($(`#s-${k}`).value = res.settings[k] || ""));
       toast("Datos guardados");
     } catch (err) {
       handleError(err);

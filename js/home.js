@@ -94,18 +94,22 @@ function renderCategoryShowcase() {
     .join("");
 }
 
-/* Tira de marcas: la lista se duplica para que la animación sea continua */
+/* Tira de marcas: solo logos reales cargados en el panel. La lista se duplica para que la animación sea continua */
 function renderBrands() {
   const track = document.querySelector("#brands-track");
   if (!track) return;
-  const brands = settings().brands || [];
+  const brands = (settings().brands || []).filter((b) => b && typeof b === "object" && b.logo);
   if (!brands.length) {
     track.closest("section")?.remove();
     return;
   }
-  const item = (b, hidden) => `<li class="brand-chip"${hidden ? ' aria-hidden="true"' : ""}>${escapeHTML(b)}</li>`;
-  track.innerHTML = brands.map((b) => item(b)).join("") + brands.map((b) => item(b, true)).join("");
-  track.style.setProperty("--brands-duration", `${Math.max(brands.length * 3.5, 18)}s`);
+  const item = (b, hidden) =>
+    `<li class="brand-logo"${hidden ? ' aria-hidden="true"' : ""}><img src="${escapeHTML(b.logo)}" alt="${hidden ? "" : escapeHTML(b.name || "")}" loading="lazy" decoding="async"></li>`;
+  // Con pocas marcas se repite la tanda hasta que la tira supere el ancho de pantalla
+  const reps = Math.max(1, Math.ceil(8 / brands.length));
+  const set = Array.from({ length: reps }, () => brands).flat();
+  track.innerHTML = set.map((b, i) => item(b, i >= brands.length)).join("") + set.map((b) => item(b, true)).join("");
+  track.style.setProperty("--brands-duration", `${Math.max(set.length * 3.5, 18)}s`);
 }
 
 // La foto de fondo se asigna apenas carga el script (los scripts van al final del <body>),

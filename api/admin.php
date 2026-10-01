@@ -8,7 +8,7 @@
    POST {action:"saveCategories", categories}
    POST {action:"saveSettings", settings}
    POST {action:"importBackup", data}
-   POST multipart action=upload, folder=products|categories|site, image=<archivo> */
+   POST multipart action=upload, folder=products|categories|site|brands, image=<archivo> */
 
 declare(strict_types=1);
 require __DIR__ . '/lib/bootstrap.php';

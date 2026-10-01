@@ -235,7 +235,7 @@ input, textarea{ font: inherit; color: inherit; }
   gap: 1rem;
 }
 .site-header__logo img{
-  height: 46px;
+  height: 38px;
   width: auto;
 }
 .site-header__nav{
@@ -347,7 +347,7 @@ input, textarea{ font: inherit; color: inherit; }
   align-items: center;
   margin-bottom: 2rem;
 }
-.mobile-nav__top img{ height: 40px; }
+.mobile-nav__top img{ height: 34px; }
 .mobile-nav .icon-btn{ color: var(--white); }
 .mobile-nav .icon-btn:hover{ background: rgba(255,255,255,.12); }
 .mobile-nav__links{
@@ -779,7 +779,7 @@ body.nav-locked{ overflow: hidden; }
 .location__row:last-of-type{ border-bottom: none; }
 .location__row .icon{ width: 22px; height: 22px; color: var(--blue-600); flex-shrink: 0; margin-top: .1rem; }
 .location__row strong{ display: block; color: var(--ink); font-size: .98rem; margin-bottom: .15rem; }
-.location__row span, .location__row p{ color: var(--text-muted); font-size: .92rem; margin: 0; }
+.location__row span, .location__row p, .location__row a[data-mail]{ color: var(--text-muted); font-size: .92rem; margin: 0; }
 .location__social{
   display: flex;
   gap: .6rem;
@@ -833,7 +833,7 @@ body.nav-locked{ overflow: hidden; }
 @media (min-width: 1024px){
   .site-footer__top{ grid-template-columns: 1.4fr 1fr 1fr 1fr; }
 }
-.site-footer__brand img{ height: 52px; margin-bottom: 1rem; }
+.site-footer__brand img{ height: 44px; margin-bottom: 1rem; }
 .site-footer__brand p{ max-width: 34ch; font-size: .92rem; }
 .site-footer h4{
   font-family: var(--font-display);
@@ -1543,26 +1543,29 @@ body.nav-locked{ overflow: hidden; }
 @keyframes brands-scroll{
   to{ transform: translateX(calc(-50% - .5rem)); }
 }
-.brand-chip{
+.brand-logo{
   flex: 0 0 auto;
-  min-width: 168px;
+  width: 168px;
   height: 72px;
-  padding-inline: 1.4rem;
+  padding: .75rem 1.25rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1.5px dashed var(--blue-300);
+  border: 1px solid var(--blue-150);
   border-radius: 14px;
-  background: var(--frost);
-  font-family: var(--font-display);
-  font-size: 1.15rem;
-  font-weight: 600;
-  color: var(--blue-700);
+  background: #fff;
+}
+.brand-logo img{
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  object-fit: contain;
 }
 @media (prefers-reduced-motion: reduce){
   .brands__viewport{ overflow-x: auto; -webkit-mask-image: none; mask-image: none; padding-inline: 1.25rem; }
   .brands__track{ animation: none !important; }
-  .brand-chip[aria-hidden="true"]{ display: none; }
+  .brand-logo[aria-hidden="true"]{ display: none; }
 }
 
 /* =========================================================
@@ -2059,3 +2062,21 @@ body.filters-open .filters-overlay{ opacity: 1; pointer-events: auto; }
   text-align: center;
   padding: .4rem 1rem;
 }
+
+/* Precio del producto (o "Consultar precio" si todavía no tiene) */
+.price{
+  margin-top: .35rem;
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--blue-700);
+  line-height: 1.2;
+}
+.price--ask{
+  font-family: var(--font-body);
+  font-size: .85rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+.price--lg{ font-size: 1.6rem; margin: .1rem 0 .6rem; }
+.price--lg.price--ask{ font-size: 1rem; }

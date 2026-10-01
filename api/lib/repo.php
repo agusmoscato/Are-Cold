@@ -4,7 +4,7 @@
 declare(strict_types=1);
 
 const SETTINGS_KEYS = [
-    'whatsapp', 'whatsappDisplay', 'address', 'city', 'hours', 'hoursShort',
+    'whatsapp', 'whatsappDisplay', 'email', 'address', 'city', 'hours', 'hoursShort',
     'instagram', 'facebook', 'mapEmbed',
     'heroEyebrow', 'heroTitle', 'heroHighlight', 'heroText', 'heroImage',
     'brands',
@@ -53,9 +53,35 @@ function in_transaction(callable $fn)
    ========================================================= */
 
 /* Estructura que usa el sitio: { settings, categories[{..., subcategories}], products[{..., images}] } */
+/* Las bases creadas antes de existir el precio no tienen la columna: se agrega sola, una vez */
+function ensure_price_column(): void
+{
+    static $checked = false;
+    if ($checked) {
+        return;
+    }
+    $checked = true;
+    $pdo = db();
+    if (!$pdo->query("SHOW COLUMNS FROM products LIKE 'price'")->fetch()) {
+        $pdo->exec("ALTER TABLE products ADD COLUMN price VARCHAR(12) NOT NULL DEFAULT '' AFTER tag");
+    }
+}
+
+/* Precio opcional: solo números (pesos enteros). Vacío = "Consultar precio" en el sitio */
+function clean_price($value): string
+{
+    $digits = preg_replace('/\D/', '', (string) ($value ?? ''));
+    $digits = ltrim($digits, '0');
+    if (strlen($digits) > 10) {
+        throw new ApiError('El precio es demasiado grande. Revisá que no tenga números de más.');
+    }
+    return $digits;
+}
+
 function get_data(bool $includeInactive): array
 {
     $pdo = db();
+    ensure_price_column();
 
     $settings = [];
     foreach ($pdo->query('SELECT name, value FROM settings') as $row) {
@@ -86,7 +112,7 @@ function get_data(bool $includeInactive): array
         $images[$row['product_id']][] = $row['path'];
     }
 
-    $sql = 'SELECT p.id, p.name, c.slug AS category, s.slug AS subcategory, p.tag, p.active, p.description, p.features
+    $sql = 'SELECT p.id, p.name, c.slug AS category, s.slug AS subcategory, p.tag, p.price, p.active, p.description, p.features
             FROM products p
             JOIN categories c ON c.id = p.category_id
             LEFT JOIN subcategories s ON s.id = p.subcategory_id'
@@ -100,6 +126,7 @@ function get_data(bool $includeInactive): array
             'category'    => $row['category'],
             'subcategory' => $row['subcategory'] ?? '',
             'tag'         => $row['tag'],
+            'price'       => $row['price'],
             'active'      => (bool) $row['active'],
             'description' => $row['description'],
             'features'    => json_decode($row['features'], true) ?: [],
@@ -204,6 +231,7 @@ function category_row(string $slug): array
 function save_product(array $in, ?string $forceId = null, bool $returnProduct = true): ?array
 {
     $pdo = db();
+    ensure_price_column();
     $id = (string) ($in['id'] ?? '');
     $isNew = $id === '';
 
@@ -244,6 +272,7 @@ function save_product(array $in, ?string $forceId = null, bool $returnProduct = 
         'subcategory_id' => $subId,
         'name'           => $name,
         'tag'            => $tag,
+        'price'          => clean_price($in['price'] ?? ''),
         'active'         => !empty($in['active']) ? 1 : 0,
         'description'    => clean_text($in['description'] ?? '', 4000, 'Descripción'),
         'features'       => json_encode($features, JSON_UNESCAPED_UNICODE),
@@ -255,8 +284,8 @@ function save_product(array $in, ?string $forceId = null, bool $returnProduct = 
             $id = ($forceId !== null && preg_match('/^[a-z0-9]{1,40}$/i', $forceId) && !product_exists($forceId))
                 ? $forceId
                 : new_product_id();
-            $st = $pdo->prepare('INSERT INTO products (id, category_id, subcategory_id, name, tag, active, description, features)
-                                 VALUES (:id, :category_id, :subcategory_id, :name, :tag, :active, :description, :features)');
+            $st = $pdo->prepare('INSERT INTO products (id, category_id, subcategory_id, name, tag, price, active, description, features)
+                                 VALUES (:id, :category_id, :subcategory_id, :name, :tag, :price, :active, :description, :features)');
             $st->execute(['id' => $id] + $fields);
         } else {
             $st = $pdo->prepare('SELECT path FROM product_images WHERE product_id = ?');
@@ -264,7 +293,7 @@ function save_product(array $in, ?string $forceId = null, bool $returnProduct = 
             $previousImages = $st->fetchAll(PDO::FETCH_COLUMN);
 
             $st = $pdo->prepare('UPDATE products SET category_id = :category_id, subcategory_id = :subcategory_id, name = :name,
-                                 tag = :tag, active = :active, description = :description, features = :features WHERE id = :id');
+                                 tag = :tag, price = :price, active = :active, description = :description, features = :features WHERE id = :id');
             $st->execute(['id' => $id] + $fields);
             if ($st->rowCount() === 0 && !product_exists($id)) {
                 throw new ApiError('Ese producto ya no existe. Puede que lo hayan eliminado.', 404);
@@ -436,18 +465,30 @@ function save_settings(array $in): array
     if (!preg_match('/^\d{10,15}$/', $whatsapp)) {
         throw new ApiError('El número de WhatsApp tiene que tener entre 10 y 15 números. Ej: 5492326422390');
     }
+    $email = trim((string) ($in['email'] ?? ''));
+    if ($email !== '' && (strlen($email) > 120 || !filter_var($email, FILTER_VALIDATE_EMAIL))) {
+        throw new ApiError('El mail de contacto no es válido. Ej: ventas@arecold.com.ar');
+    }
+    // Cada marca: nombre (texto alternativo) + logo subido. El orden de la lista es el del carrusel.
     $brands = [];
     foreach (array_slice((array) ($in['brands'] ?? []), 0, 40) as $b) {
-        $b = clean_text($b, 60, 'Marca');
-        if ($b !== '') {
-            $brands[] = $b;
+        $b = (array) $b;
+        $name = clean_text($b['name'] ?? '', 60, 'Nombre de la marca');
+        $logo = valid_asset_path($b['logo'] ?? '');
+        if ($name === '' && $logo === '') {
+            continue;
         }
+        if ($logo === '') {
+            throw new ApiError("A la marca “{$name}” le falta el logo. Subí la imagen o quitá la marca.");
+        }
+        $brands[] = ['name' => $name !== '' ? $name : 'Marca', 'logo' => $logo];
     }
     $hours = implode("\n", array_filter(array_map('trim', explode("\n", clean_text($in['hours'] ?? '', 500, 'Horarios')))));
 
     $clean = [
         'whatsapp'        => $whatsapp,
         'whatsappDisplay' => clean_text($in['whatsappDisplay'] ?? '', 40, 'Número como se muestra'),
+        'email'           => $email,
         'address'         => clean_text($in['address'] ?? '', 120, 'Dirección'),
         'city'            => clean_text($in['city'] ?? '', 120, 'Ciudad'),
         'hours'           => $hours,
@@ -463,10 +504,18 @@ function save_settings(array $in): array
         'brands'          => $brands,
     ];
 
-    $previousHero = get_data(true)['settings']['heroImage'] ?? '';
+    $previous = get_data(true)['settings'];
     write_settings($clean);
+    $previousHero = $previous['heroImage'] ?? '';
     if ($previousHero !== $clean['heroImage']) {
         delete_upload_if_unused((string) $previousHero);
+    }
+    $keptLogos = array_column($brands, 'logo');
+    foreach ((array) ($previous['brands'] ?? []) as $old) {
+        $logo = is_array($old) ? (string) ($old['logo'] ?? '') : '';
+        if ($logo !== '' && !in_array($logo, $keptLogos, true)) {
+            delete_upload_if_unused($logo);
+        }
     }
     return $clean;
 }
@@ -487,7 +536,7 @@ function write_settings(array $settings): void
 
 function store_upload(array $file, string $folder): string
 {
-    if (!in_array($folder, ['products', 'categories', 'site'], true)) {
+    if (!in_array($folder, ['products', 'categories', 'site', 'brands'], true)) {
         $folder = 'products';
     }
     if (($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK || !is_uploaded_file($file['tmp_name'])) {
@@ -521,6 +570,18 @@ function store_upload(array $file, string $folder): string
             $nw = max(1, (int) round($w * $scale));
             $nh = max(1, (int) round($h * $scale));
             $dst = imagecreatetruecolor($nw, $nh);
+            if ($folder === 'brands' && function_exists('imagepng')) {
+                // Los logos conservan la transparencia
+                imagealphablending($dst, false);
+                imagesavealpha($dst, true);
+                imagefill($dst, 0, 0, imagecolorallocatealpha($dst, 255, 255, 255, 127));
+                imagecopyresampled($dst, $src, 0, 0, 0, 0, $nw, $nh, $w, $h);
+                $target = "{$dir}/{$name}.png";
+                imagepng($dst, $target, 8);
+                imagedestroy($src);
+                imagedestroy($dst);
+                return relative_upload_path($target);
+            }
             imagefill($dst, 0, 0, imagecolorallocate($dst, 255, 255, 255));
             imagecopyresampled($dst, $src, 0, 0, 0, 0, $nw, $nh, $w, $h);
             $target = "{$dir}/{$name}.jpg";
@@ -555,6 +616,12 @@ function delete_upload_if_unused(string $path): void
         return;
     }
     $st = $pdo->prepare("SELECT COUNT(*) FROM settings WHERE name = 'heroImage' AND value = ?");
+    $st->execute([json_encode($path, JSON_UNESCAPED_UNICODE)]);
+    if ((int) $st->fetchColumn() > 0) {
+        return;
+    }
+    // ¿Algún logo de marca la usa? (las marcas se guardan como JSON dentro de settings)
+    $st = $pdo->prepare("SELECT COUNT(*) FROM settings WHERE name = 'brands' AND INSTR(value, ?) > 0");
     $st->execute([json_encode($path, JSON_UNESCAPED_UNICODE)]);
     if ((int) $st->fetchColumn() > 0) {
         return;

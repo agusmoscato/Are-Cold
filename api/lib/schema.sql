@@ -48,6 +48,7 @@ CREATE TABLE IF NOT EXISTS products (
   subcategory_id INT UNSIGNED NULL,
   name           VARCHAR(160) NOT NULL,
   tag            VARCHAR(20)  NOT NULL DEFAULT '',
+  price          VARCHAR(12)  NOT NULL DEFAULT '',
   active         TINYINT(1)   NOT NULL DEFAULT 1,
   description    TEXT         NOT NULL,
   features       TEXT         NOT NULL,
