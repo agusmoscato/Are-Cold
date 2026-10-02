@@ -226,6 +226,7 @@ function route() {
 
   if (section === "producto") renderProductForm(view, id === "nuevo" ? null : id);
   else if (section === "categorias") renderCategories(view);
+  else if (section === "arbol") renderTree(view);
   else if (section === "negocio") renderSettings(view);
   else if (section === "respaldo") renderBackup(view);
   else renderProductList(view);
@@ -1112,6 +1113,145 @@ function renderCategories(view) {
     }
     cat.subcategories.push({ slug: uniqueSlug(name, cat.subcategories.map((s) => s.slug)), name });
     if (await saveCats(`Subcategoría “${name}” agregada`)) $(`[data-cat="${cat.slug}"] [data-sub-add] input`)?.focus();
+  });
+
+  render();
+}
+
+/* =========================================================
+   Árbol de categorías: vista de toda la estructura con cantidad de productos.
+   Renombrar y eliminar usan la misma acción que la pantalla Categorías (saveCategories).
+   ========================================================= */
+const treeOpen = new Set();
+
+function renderTree(view) {
+  view.innerHTML = `
+    <div class="page">
+      <div class="page-head">
+        <div>
+          <h1>Árbol de categorías</h1>
+          <p>Toda la estructura del catálogo de un vistazo, con la cantidad de productos de cada rama. Para reordenar o cambiar íconos y fotos, usá <a href="#categorias" style="text-decoration:underline">Categorías</a>.</p>
+        </div>
+        <div class="page-head__actions">
+          <button type="button" class="btn btn--ghost btn--sm" id="tree-expand">Expandir todo</button>
+          <button type="button" class="btn btn--ghost btn--sm" id="tree-collapse">Colapsar todo</button>
+        </div>
+      </div>
+      <section class="card"><ul class="tree" id="tree" role="tree"></ul></section>
+    </div>`;
+  const root = $("#tree");
+  const countLabel = (n) => `<span class="tree__count${n ? "" : " tree__count--empty"}" title="${n} ${n === 1 ? "producto" : "productos"}">${n}</span>`;
+  const countIn = (c, subSlug) => db.products.filter((p) => p.category === c.slug && (subSlug === undefined || p.subcategory === subSlug)).length;
+
+  const render = () => {
+    root.innerHTML = db.categories
+      .map((c) => {
+        const total = countIn(c);
+        const open = treeOpen.has(c.slug);
+        const hasSubs = c.subcategories.length > 0;
+        const inSubs = c.subcategories.reduce((sum, s) => sum + countIn(c, s.slug), 0);
+        const subs = c.subcategories
+          .map(
+            (s) => `
+            <li class="tree__node tree__node--sub" data-cat="${c.slug}" data-sub="${s.slug}" role="treeitem">
+              <span class="tree__toggle tree__toggle--none"></span>
+              <input class="input tree__name" type="text" value="${esc(s.name)}" data-sub-rename aria-label="Nombre de la subcategoría" maxlength="60">
+              ${countLabel(countIn(c, s.slug))}
+              <button type="button" class="icon-btn icon-btn--danger" data-sub-delete aria-label="Eliminar ${esc(s.name)}">${icon("trash")}</button>
+            </li>`
+          )
+          .join("");
+        return `
+        <li class="tree__group" data-cat="${c.slug}" role="treeitem"${hasSubs ? ` aria-expanded="${open}"` : ""}>
+          <div class="tree__node">
+            <button type="button" class="tree__toggle${open ? " is-open" : ""}" data-toggle aria-label="${open ? "Colapsar" : "Expandir"} ${esc(c.name)}"${hasSubs ? "" : " disabled"}>${icon("chevron")}</button>
+            <span class="cat-item__icon">${icon(c.icon)}</span>
+            <input class="input tree__name tree__name--cat" type="text" value="${esc(c.name)}" data-cat-rename aria-label="Nombre de la categoría" maxlength="60">
+            ${countLabel(total)}
+            <button type="button" class="icon-btn icon-btn--danger" data-cat-delete aria-label="Eliminar ${esc(c.name)}"
+              title="${total ? `Tiene ${total} productos: movelos o eliminalos antes` : "Eliminar categoría"}"${total ? " disabled" : ""}>${icon("trash")}</button>
+          </div>
+          ${
+            hasSubs
+              ? `<ul class="tree__children" role="group"${open ? "" : " hidden"}>${subs}${total - inSubs > 0 ? `<li class="tree__note">${total - inSubs} sin subcategoría</li>` : ""}</ul>`
+              : ""
+          }
+        </li>`;
+      })
+      .join("");
+  };
+
+  const saveCats = async (message, rerender = true) => {
+    try {
+      const res = await api("saveCategories", { categories: db.categories });
+      db.categories = res.categories;
+      toast(message);
+      if (rerender) render();
+      return true;
+    } catch (err) {
+      handleError(err);
+      try { await loadData(); } catch (e) { /* sin conexión: queda lo que había */ }
+      render();
+      return false;
+    }
+  };
+
+  $("#tree-expand").addEventListener("click", () => {
+    db.categories.forEach((c) => c.subcategories.length && treeOpen.add(c.slug));
+    render();
+  });
+  $("#tree-collapse").addEventListener("click", () => {
+    treeOpen.clear();
+    render();
+  });
+
+  root.addEventListener("change", (e) => {
+    const t = e.target;
+    const cat = getCategory(t.closest("[data-cat]").dataset.cat);
+    const item = t.matches("[data-sub-rename]")
+      ? cat.subcategories.find((s) => s.slug === t.closest("[data-sub]").dataset.sub)
+      : t.matches("[data-cat-rename]")
+        ? cat
+        : null;
+    if (!item) return;
+    const name = t.value.trim();
+    if (!name) {
+      t.value = item.name;
+      return;
+    }
+    item.name = name;
+    saveCats("Nombre guardado", false);
+  });
+
+  root.addEventListener("click", async (e) => {
+    const btn = e.target.closest("button");
+    if (!btn || btn.disabled) return;
+    const cat = getCategory(btn.closest("[data-cat]").dataset.cat);
+    if (btn.matches("[data-toggle]")) {
+      if (treeOpen.has(cat.slug)) treeOpen.delete(cat.slug);
+      else treeOpen.add(cat.slug);
+      render();
+      $(`[data-cat="${cat.slug}"] [data-toggle]`)?.focus();
+    } else if (btn.matches("[data-cat-delete]")) {
+      const ok = await confirmDialog(`¿Eliminar la categoría “${cat.name}”?`, "Desaparece del menú y del catálogo.", "Eliminar categoría");
+      if (!ok) return;
+      db.categories.splice(db.categories.indexOf(cat), 1);
+      saveCats("Categoría eliminada");
+    } else if (btn.matches("[data-sub-delete]")) {
+      const slug = btn.closest("[data-sub]").dataset.sub;
+      const sub = cat.subcategories.find((s) => s.slug === slug);
+      const using = db.products.filter((p) => p.category === cat.slug && p.subcategory === slug);
+      const ok = await confirmDialog(
+        `¿Eliminar “${sub.name}”?`,
+        using.length
+          ? `${using.length} ${using.length === 1 ? "producto usa" : "productos usan"} esta subcategoría. Van a quedar dentro de “${cat.name}”, sin subcategoría.`
+          : "No hay productos cargados en esta subcategoría.",
+        "Eliminar subcategoría"
+      );
+      if (!ok) return;
+      cat.subcategories = cat.subcategories.filter((s) => s.slug !== slug);
+      if (await saveCats("Subcategoría eliminada")) using.forEach((p) => (p.subcategory = ""));
+    }
   });
 
   render();

@@ -25,6 +25,7 @@ uploads/                        Fotos subidas desde el panel (NO van a Git; .hta
 data/datos-de-ejemplo.js        DATOS DE EJEMPLO (única copia): fallback sin base, install.php y sql/generar.php
 sql/arecold-base-inicial.sql    Estructura + datos de ejemplo + admin de prueba, para importar en phpMyAdmin
 sql/generar.php                 Regenera el .sql (php sql/generar.php). La carpeta sql/ no se sirve por web
+sql/importar-lote.js            Carga de catálogo real: node sql/importar-lote.js <paquete> → genera sql/catalogo-lote1.sql y copia fotos a uploads/products/catalogo y uploads/brands
 css/styles.css                  Diseño del sitio. Al final: bloques "FASE 2" y "VERSIÓN FINAL"
 js/icons.js                     Íconos (se inyectan en cada página y en el panel)
 js/store.js                     Lee window.AECOLD_SERVER + helpers + lista "Mi cotización"
@@ -89,3 +90,11 @@ Los datos del negocio aparecen en el HTML mediante atributos: `data-setting="add
 
 ## Pendiente con el cliente
 Ver `DECISIONES-DISENO.md`, sección "Pendientes".
+
+---
+
+## Datos de ejemplo vs. datos reales
+
+- **Árbol de categorías** (`#arbol` en el panel): vista anidada con cantidad de productos; renombra y elimina con la misma acción `saveCategories`.
+- Los productos de ejemplo tienen ids `p01`…`p27` (`data/datos-de-ejemplo.js`). El catálogo real usa ids con el slug de marca (`ormay-…`, `kohinoor-…`). **Todo dato de prueba nuevo debe llevar el prefijo `demo-` en el id** para poder limpiarlo con `DELETE FROM products WHERE id LIKE 'demo-%'`.
+- `node sql/limpiar-datos-demo.js` genera `sql/limpiar-datos-demo.sql` (borra solo lo que coincide en id y nombre con los datos de ejemplo). Los importadores de lotes reales (`sql/importar-lote.js`) no cargan datos de ejemplo.

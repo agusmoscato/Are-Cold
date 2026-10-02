@@ -134,6 +134,19 @@ function get_data(bool $includeInactive): array
         ];
     }
 
+    // En el sitio público no se muestran las subcategorías que todavía no tienen productos visibles
+    if (!$includeInactive) {
+        $used = [];
+        foreach ($products as $p) {
+            $used[$p['category'] . '/' . $p['subcategory']] = true;
+        }
+        foreach ($categories as &$c) {
+            $slug = $c['slug'];
+            $c['subcategories'] = array_values(array_filter($c['subcategories'], fn ($s) => isset($used[$slug . '/' . $s['slug']])));
+        }
+        unset($c);
+    }
+
     return ['settings' => $settings, 'categories' => $categories, 'products' => $products];
 }
 
